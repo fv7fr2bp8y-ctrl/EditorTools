@@ -4,3 +4,4 @@ python-multipart==0.0.32
 faster-whisper==1.1.1
 requests
 huggingface-hub
+httpx

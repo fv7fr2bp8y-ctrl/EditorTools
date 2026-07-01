@@ -1,15 +1,23 @@
 import os
 import json
+import base64
+import struct
 import asyncio
 import tempfile
 import threading
+import re
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 app = FastAPI()
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+TTS_MODEL = "gemini-2.5-flash-preview-tts"
+TTS_VOICE = "Schedar"
+tts_cache: dict[str, bytes] = {}
 
 MODELS = ["tiny", "base", "small", "medium", "large-v2", "large-v3"]
 LANGUAGES = {
@@ -153,6 +161,67 @@ async def stream(job_id: str):
             await asyncio.sleep(0.3)
 
     return StreamingResponse(event_gen(), media_type="text/event-stream")
+
+
+def pcm_to_wav(pcm: bytes, rate: int) -> bytes:
+    n = len(pcm)
+    header = struct.pack(
+        "<4sI4s4sIHHIIHH4sI",
+        b"RIFF", 36 + n, b"WAVE", b"fmt ",
+        16, 1, 1, rate, rate * 2, 2, 16,
+        b"data", n,
+    )
+    return header + pcm
+
+
+async def gemini_tts_once(text: str) -> tuple[bytes, int] | None:
+    import httpx
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{TTS_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    body = {
+        "contents": [{"parts": [{"text": text}]}],
+        "generationConfig": {
+            "responseModalities": ["AUDIO"],
+            "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": TTS_VOICE}}},
+        },
+    }
+    async with httpx.AsyncClient(timeout=30) as client:
+        res = await client.post(url, json=body)
+    if res.status_code != 200:
+        return None
+    data = res.json()
+    parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])
+    inline = parts[0].get("inlineData") if parts else None
+    if not inline or not inline.get("data"):
+        return None
+    rate_match = re.search(r"rate=(\d+)", inline.get("mimeType", ""))
+    rate = int(rate_match.group(1)) if rate_match else 24000
+    pcm = base64.b64decode(inline["data"])
+    return pcm, rate
+
+
+@app.post("/tts")
+async def tts(text: str = Form(...)):
+    if not GEMINI_API_KEY:
+        raise HTTPException(500, "GEMINI_API_KEY не е конфигуриран на сървъра")
+
+    text = text.strip()
+    if not text:
+        raise HTTPException(400, "Празен текст")
+
+    if text in tts_cache:
+        return Response(content=tts_cache[text], media_type="audio/wav")
+
+    result = await gemini_tts_once(text)
+    if not result:
+        result = await gemini_tts_once(text)  # един повторен опит
+    if not result:
+        raise HTTPException(502, "Gemini TTS не върна аудио")
+
+    pcm, rate = result
+    wav = pcm_to_wav(pcm, rate)
+    tts_cache[text] = wav
+    return Response(content=wav, media_type="audio/wav")
 
 
 @app.get("/", response_class=HTMLResponse)

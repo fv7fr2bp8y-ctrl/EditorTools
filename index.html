@@ -9,7 +9,7 @@
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #0f0f13;
+    background: radial-gradient(ellipse 1200px 600px at 50% -10%, #1c1c30, #0f0f13 60%);
     color: #e8e8f0;
     min-height: 100vh;
     display: flex;
@@ -18,14 +18,51 @@
     padding: 40px 20px;
   }
 
+  .topbar {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+
   h1 {
     font-size: 1.6rem;
     font-weight: 600;
     letter-spacing: -0.02em;
-    margin-bottom: 32px;
     color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
   h1 span { color: #7c7cff; }
+  h1 .logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #7c7cff, #a07cff);
+    font-size: 1.1rem;
+    box-shadow: 0 4px 14px rgba(124,124,255,0.35);
+  }
+
+  .donate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #1e1e30;
+    border: 1px solid #3a3a55;
+    color: #d0d0e8;
+    text-decoration: none;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  }
+  .donate-btn:hover { background: #2a2a40; border-color: #7c7cff; transform: translateY(-1px); }
 
   .card {
     background: #1a1a24;
@@ -35,6 +72,7 @@
     width: 100%;
     max-width: 720px;
     margin-bottom: 20px;
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5);
   }
 
   /* Drop zone */
@@ -211,10 +249,72 @@
     font-family: "SF Mono", "Fira Code", monospace;
   }
 
-  /* Segment highlight on hover for SRT */
-  .srt-block { padding: 2px 0; }
-  .srt-ts { color: #4a4a6a; font-size: 0.78rem; }
-  .srt-num { color: #3a3a5a; }
+  /* Segment rows (plain-text tab with read-aloud) */
+  #segment-list {
+    background: #111118;
+    border: 1px solid #1e1e2e;
+    border-radius: 10px;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .seg-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #1a1a26;
+    transition: background 0.15s;
+  }
+  .seg-row:last-child { border-bottom: none; }
+  .seg-row:hover { background: #16161f; }
+  .seg-ts {
+    flex-shrink: 0;
+    color: #4a4a6a;
+    font-size: 0.72rem;
+    font-family: "SF Mono", "Fira Code", monospace;
+    padding-top: 3px;
+    width: 44px;
+  }
+  .seg-text {
+    flex: 1;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #d0d0e4;
+  }
+  .seg-listen {
+    flex-shrink: 0;
+    background: #1e1e30;
+    border: 1px solid #2e2e48;
+    color: #9090c8;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
+  }
+  .seg-listen:hover { background: #2a2a48; border-color: #7c7cff; color: #fff; transform: scale(1.06); }
+  .seg-listen.playing { background: #7c7cff; border-color: #7c7cff; color: #fff; animation: pulse 1s ease-in-out infinite; }
+  .seg-listen.loading { opacity: 0.5; cursor: wait; animation: none; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(124,124,255,0.5); } 50% { box-shadow: 0 0 0 6px rgba(124,124,255,0); } }
+
+  .read-all-btn {
+    background: #1e1e30;
+    border: 1px solid #3a3a55;
+    color: #9090c0;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .read-all-btn:hover { background: #2a2a40; color: #e8e8f0; }
+  .read-all-btn.active { background: #7c7cff; border-color: #7c7cff; color: #fff; }
 
   #error-msg {
     color: #ff6b6b;
@@ -226,7 +326,10 @@
 </head>
 <body>
 
-<h1>🎙 Whisper <span>Транскрипция</span></h1>
+<div class="topbar">
+  <h1><span class="logo-mark">🎙</span> Whisper <span>Транскрипция</span></h1>
+  <a class="donate-btn" href="https://buymeacoffee.com/editortools" target="_blank" rel="noopener">☕ Дари</a>
+</div>
 
 <div class="card">
   <div id="drop">
@@ -292,9 +395,13 @@
       <div class="tab active" data-tab="plain">Текст</div>
       <div class="tab" data-tab="srt">SRT</div>
     </div>
-    <button class="dl-btn" id="dl-btn">⬇ Изтегли</button>
+    <div style="display:flex; gap:8px;">
+      <button class="read-all-btn" id="read-all-btn">🔊 Прочети всичко</button>
+      <button class="dl-btn" id="dl-btn">⬇ Изтегли</button>
+    </div>
   </div>
-  <div id="output-text"></div>
+  <div id="segment-list"></div>
+  <div id="output-text" style="display:none"></div>
 </div>
 
 <script>
@@ -311,13 +418,92 @@ const progLabel = document.getElementById('prog-label');
 const infoBar = document.getElementById('info-bar');
 const outputCard = document.getElementById('output-card');
 const outputText = document.getElementById('output-text');
+const segmentList = document.getElementById('segment-list');
 const errorMsg = document.getElementById('error-msg');
 const dlBtn = document.getElementById('dl-btn');
+const readAllBtn = document.getElementById('read-all-btn');
 
 let currentFile = null;
 let segments = [];
 let activeTab = 'plain';
 let totalDuration = 0;
+let currentAudio = null;
+let readAllActive = false;
+let readAllIndex = 0;
+
+// --- Text-to-speech (Gemini, via backend /tts) ---
+async function fetchTTS(text) {
+  const fd = new FormData();
+  fd.append('text', text);
+  const res = await fetch('/tts', { method: 'POST', body: fd });
+  if (!res.ok) throw new Error('tts failed');
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+function stopAudio() {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  document.querySelectorAll('.seg-listen.playing, .seg-listen.loading').forEach(b => {
+    b.classList.remove('playing', 'loading');
+    b.textContent = '🔊';
+  });
+}
+
+async function playSegment(idx, btnEl, onEnded) {
+  stopAudio();
+  btnEl.classList.add('loading');
+  btnEl.textContent = '…';
+  try {
+    const url = await fetchTTS(segments[idx].text.trim());
+    btnEl.classList.remove('loading');
+    btnEl.classList.add('playing');
+    btnEl.textContent = '⏸';
+    const audio = new Audio(url);
+    currentAudio = audio;
+    audio.onended = () => {
+      btnEl.classList.remove('playing');
+      btnEl.textContent = '🔊';
+      if (onEnded) onEnded();
+    };
+    await audio.play();
+  } catch (e) {
+    btnEl.classList.remove('loading', 'playing');
+    btnEl.textContent = '⚠️';
+    setTimeout(() => { btnEl.textContent = '🔊'; }, 1500);
+  }
+}
+
+readAllBtn.addEventListener('click', () => {
+  if (readAllActive) {
+    readAllActive = false;
+    readAllBtn.classList.remove('active');
+    readAllBtn.textContent = '🔊 Прочети всичко';
+    stopAudio();
+    return;
+  }
+  readAllActive = true;
+  readAllIndex = 0;
+  readAllBtn.classList.add('active');
+  readAllBtn.textContent = '⏹ Спри';
+  playNextInSequence();
+});
+
+function playNextInSequence() {
+  if (!readAllActive || readAllIndex >= segments.length) {
+    readAllActive = false;
+    readAllBtn.classList.remove('active');
+    readAllBtn.textContent = '🔊 Прочети всичко';
+    return;
+  }
+  const row = segmentList.children[readAllIndex];
+  const btnEl = row ? row.querySelector('.seg-listen') : null;
+  if (!btnEl) { readAllIndex++; playNextInSequence(); return; }
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  playSegment(readAllIndex, btnEl, () => {
+    readAllIndex++;
+    playNextInSequence();
+  });
+}
 
 // Drop zone
 drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
@@ -429,10 +615,49 @@ btn.addEventListener('click', async () => {
 // Render
 function renderOutput() {
   if (activeTab === 'plain') {
-    outputText.textContent = segments.map(s => s.text.trim()).join('\n');
+    segmentList.style.display = 'block';
+    outputText.style.display = 'none';
+    readAllBtn.style.display = 'inline-flex';
+    renderSegmentList();
   } else {
+    segmentList.style.display = 'none';
+    outputText.style.display = 'block';
+    readAllBtn.style.display = 'none';
     outputText.textContent = toSRT(segments);
   }
+}
+
+function renderSegmentList() {
+  segmentList.innerHTML = '';
+  segments.forEach((seg, idx) => {
+    const row = document.createElement('div');
+    row.className = 'seg-row';
+
+    const ts = document.createElement('div');
+    ts.className = 'seg-ts';
+    const mm = Math.floor(seg.start / 60);
+    const ss = Math.floor(seg.start % 60);
+    ts.textContent = `${mm}:${ss.toString().padStart(2, '0')}`;
+
+    const text = document.createElement('div');
+    text.className = 'seg-text';
+    text.textContent = seg.text.trim();
+
+    const listenBtn = document.createElement('button');
+    listenBtn.className = 'seg-listen';
+    listenBtn.textContent = '🔊';
+    listenBtn.title = 'Чуй';
+    listenBtn.addEventListener('click', () => {
+      if (readAllActive) { readAllActive = false; readAllBtn.classList.remove('active'); readAllBtn.textContent = '🔊 Прочети всичко'; }
+      if (listenBtn.classList.contains('playing')) { stopAudio(); return; }
+      playSegment(idx, listenBtn);
+    });
+
+    row.appendChild(ts);
+    row.appendChild(text);
+    row.appendChild(listenBtn);
+    segmentList.appendChild(row);
+  });
 }
 
 function toSRT(segs) {
