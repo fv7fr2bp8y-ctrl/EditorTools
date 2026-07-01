@@ -173,30 +173,15 @@
   /* Settings */
   .field { display: flex; flex-direction: column; gap: 8px; }
   .field-label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--et-muted-2); }
-  .pill-list { display: flex; flex-direction: column; gap: 6px; }
-  .pill-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 11px 13px; border-radius: 11px; border: 1px solid var(--et-border); background: var(--et-surface);
-    cursor: pointer; text-align: left; font-family: inherit;
-    transition: background 0.15s, border-color 0.15s;
+  .select-dd {
+    width: 100%; padding: 11px 13px; border-radius: 11px; border: 1px solid var(--et-border);
+    background: var(--et-surface); color: var(--et-ink); font-family: inherit; font-size: 13px;
+    font-weight: 600; cursor: pointer; -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239A96B0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center;
+    transition: border-color 0.15s;
   }
-  .pill-row.sel { border-color: var(--et-accent); background: var(--et-accent-soft); }
-  .pill-title { font-size: 13px; font-weight: 600; color: var(--et-ink); }
-  .pill-row.sel .pill-title { color: var(--et-accent-ink); }
-  .pill-note { font-size: 11px; color: var(--et-muted-2); }
-  .pill-tag {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--et-muted-2); background: var(--et-tag-bg); padding: 3px 7px; border-radius: 6px;
-  }
-  .pill-row.sel .pill-tag { color: var(--et-accent); background: var(--et-accent-tint); }
-
-  .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip-btn {
-    padding: 7px 12px; border-radius: 9px; border: 1px solid var(--et-border); background: var(--et-surface);
-    color: var(--et-btn-ink); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-  }
-  .chip-btn.sel { border-color: var(--et-accent); background: var(--et-accent); color: #FFFFFF; }
+  .select-dd:focus { outline: none; border-color: var(--et-accent); }
 
   .toggle-row {
     display: flex; align-items: center; justify-content: space-between; padding: 13px 15px;
@@ -321,6 +306,14 @@
   }
   #free-text:focus { outline: none; border-color: var(--et-accent); }
 
+  .site-footer {
+    text-align: center; padding: 24px 16px 8px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .site-footer p { font-size: 13px; color: var(--et-muted-2); line-height: 1.6; max-width: 560px; margin: 0 auto; }
+  .footer-meta { font-size: 12px; color: var(--et-faint); }
+  .footer-meta a { color: var(--et-accent); text-decoration: none; }
+  .footer-meta a:hover { text-decoration: underline; }
+
   @media (max-width: 900px) {
     .app-grid { grid-template-columns: 1fr; }
     .panel-left { border-right: none; border-bottom: 1px solid var(--et-border); }
@@ -407,12 +400,12 @@
 
         <div class="field">
           <span class="field-label">Модел</span>
-          <div class="pill-list" id="model-list"></div>
+          <select class="select-dd" id="model-select"></select>
         </div>
 
         <div class="field">
           <span class="field-label">Език</span>
-          <div class="chip-list" id="lang-list"></div>
+          <select class="select-dd" id="lang-select"></select>
         </div>
 
         <div class="toggle-row" id="word-toggle-row">
@@ -504,6 +497,11 @@
     </div>
     <div id="free-tts-error" style="color:var(--et-error); font-size:0.85rem; display:none;"></div>
   </div>
+
+  <footer class="site-footer">
+    <p>EditorTools помага да превърнеш аудио и видео в текст бързо и лесно — с транскрипция и генериране на глас на едно място.</p>
+    <p class="footer-meta">© 2026 EditorTools. Всички права запазени. · <a href="mailto:fps60@yahoo.com">fps60@yahoo.com</a></p>
+  </footer>
 </div>
 
 <script>
@@ -554,32 +552,25 @@ let selectedModel = 'small';
 let selectedLang = 'bg';
 let wordTsOn = false;
 
-const modelList = document.getElementById('model-list');
+const modelSelect = document.getElementById('model-select');
 MODELS.forEach(m => {
-  const row = document.createElement('button');
-  row.className = 'pill-row' + (m.id === selectedModel ? ' sel' : '');
-  row.dataset.id = m.id;
-  row.innerHTML = `<div><div class="pill-title">${m.name}</div><div class="pill-note">${m.note}</div></div><span class="pill-tag">${m.tag}</span>`;
-  row.addEventListener('click', () => {
-    selectedModel = m.id;
-    modelList.querySelectorAll('.pill-row').forEach(r => r.classList.remove('sel'));
-    row.classList.add('sel');
-  });
-  modelList.appendChild(row);
+  const opt = document.createElement('option');
+  opt.value = m.id;
+  opt.textContent = `${m.name} — ${m.note}`;
+  if (m.id === selectedModel) opt.selected = true;
+  modelSelect.appendChild(opt);
 });
+modelSelect.addEventListener('change', () => { selectedModel = modelSelect.value; });
 
-const langList = document.getElementById('lang-list');
+const langSelect = document.getElementById('lang-select');
 LANGS.forEach(l => {
-  const btn = document.createElement('button');
-  btn.className = 'chip-btn' + (l.id === selectedLang ? ' sel' : '');
-  btn.textContent = l.label;
-  btn.addEventListener('click', () => {
-    selectedLang = l.id;
-    langList.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('sel'));
-    btn.classList.add('sel');
-  });
-  langList.appendChild(btn);
+  const opt = document.createElement('option');
+  opt.value = l.id;
+  opt.textContent = l.label;
+  if (l.id === selectedLang) opt.selected = true;
+  langSelect.appendChild(opt);
 });
+langSelect.addEventListener('change', () => { selectedLang = langSelect.value; });
 
 const wordSwitch = document.getElementById('word-switch');
 document.getElementById('word-toggle-row').addEventListener('click', () => {
