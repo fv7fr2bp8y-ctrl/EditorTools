@@ -3,458 +3,806 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Whisper Транскрипция</title>
+<title>EditorTools — Аудио и видео в текст</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: radial-gradient(ellipse 1200px 600px at 50% -10%, #1c1c30, #0f0f13 60%);
-    color: #e8e8f0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 40px 20px;
+  [data-et-theme="dark"] {
+    --et-page:#0E0C18; --et-surface:#1A1726; --et-panel:#151220;
+    --et-ink:#F4F3F9; --et-ink-soft:#DEDCEA; --et-strong:#ECEAF4; --et-body:#CBC8DB;
+    --et-muted:#9A96B0; --et-muted-2:#8E8AA4; --et-faint:#615D78; --et-faint-2:#6E6A82;
+    --et-border:rgba(255,255,255,0.08); --et-border-strong:rgba(255,255,255,0.13);
+    --et-accent:#8B7BFF; --et-accent-2:#A99AFF; --et-accent-ink:#C6BCFF;
+    --et-accent-soft:rgba(124,107,255,0.15); --et-accent-tint:rgba(124,107,255,0.18); --et-accent-border:rgba(124,107,255,0.32);
+    --et-dz-border:rgba(124,107,255,0.4); --et-dz-bg:linear-gradient(180deg,rgba(124,107,255,0.11),rgba(124,107,255,0.03));
+    --et-chip-bg:rgba(255,255,255,0.04); --et-chip-border:rgba(255,255,255,0.09); --et-chip-text:#9A96B0;
+    --et-track:#39344F; --et-tab-group:rgba(255,255,255,0.06); --et-tab-active:#2C2942; --et-tab-shadow:0 1px 4px rgba(0,0,0,0.45);
+    --et-tag-bg:rgba(255,255,255,0.07); --et-hover:rgba(255,255,255,0.05); --et-btn-ink:#C4C0D6;
+    --et-invert-bg:#F4F3F9; --et-invert-ink:#1A1726; --et-invert-hover:#E0DEEB;
+    --et-skel:linear-gradient(90deg,#221E33,#2C2740,#221E33); --et-wave:#2E2A44;
+    --et-progress-track:#2A2640; --et-disabled:#35304C; --et-green:#34D399;
+    --et-donate-bg:rgba(255,217,61,0.16); --et-donate-ink:#FFD93D; --et-donate-hover:rgba(255,217,61,0.24);
+    --et-srt-num:#4A4566; --et-srt-time:#8B86A8; --et-shadow:0 30px 70px -30px rgba(0,0,0,0.7);
+    --et-error:#FF6B6B;
+  }
+  [data-et-theme="light"] {
+    --et-page:#F4F4F1; --et-surface:#FFFFFF; --et-panel:#FCFCFB;
+    --et-ink:#17171C; --et-ink-soft:#2A2A32; --et-strong:#33333C; --et-body:#46454F;
+    --et-muted:#8A8A94; --et-muted-2:#9A9AA5; --et-faint:#B4B4BC; --et-faint-2:#B0B0B8;
+    --et-border:#EFEFEA; --et-border-strong:#E7E7E2;
+    --et-accent:#5B4BE8; --et-accent-2:#7C6BFF; --et-accent-ink:#4B3CC4;
+    --et-accent-soft:#F5F3FF; --et-accent-tint:#F3F0FF; --et-accent-border:#E7E4F7;
+    --et-dz-border:#D6D4EA; --et-dz-bg:linear-gradient(180deg,#FBFAFF,#F6F4FF);
+    --et-chip-bg:#FFFFFF; --et-chip-border:#ECEAF6; --et-chip-text:#9A97AE;
+    --et-track:#DDDDD6; --et-tab-group:#F4F4F1; --et-tab-active:#FFFFFF; --et-tab-shadow:0 1px 3px rgba(0,0,0,0.1);
+    --et-tag-bg:#F4F4F1; --et-hover:#FAFAF8; --et-btn-ink:#4A4A55;
+    --et-invert-bg:#17171C; --et-invert-ink:#FFFFFF; --et-invert-hover:#33333C;
+    --et-skel:linear-gradient(90deg,#F0EFF7,#E6E4F3,#F0EFF7); --et-wave:#E4E1F5;
+    --et-progress-track:#EEECF9; --et-disabled:#C7C4E6; --et-green:#16A34A;
+    --et-donate-bg:#FFF3D6; --et-donate-ink:#7A5A00; --et-donate-hover:#FFECBC;
+    --et-srt-num:#C4C1DE; --et-srt-time:#8A85A8; --et-shadow:0 24px 60px -28px rgba(24,23,44,0.28);
+    --et-error:#D8362F;
   }
 
+  @keyframes et-spin { to { transform: rotate(360deg); } }
+  @keyframes et-bar { 0%,100% { transform: scaleY(0.35); } 50% { transform: scaleY(1); } }
+  @keyframes et-pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+  html, body {
+    background: var(--et-page);
+    color: var(--et-ink);
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    transition: background 0.3s, color 0.3s;
+  }
+  body { min-height: 100vh; padding: 40px 24px 80px; }
+
+  .shell { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+  /* Topbar */
   .topbar {
-    width: 100%;
-    max-width: 720px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 4px;
   }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .brand-mark {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(150deg, #5B4BE8, #7C6BFF);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 16px -4px rgba(91,75,232,0.55);
+    flex-shrink: 0;
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.12; }
+  .brand-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+  .brand-title span { color: var(--et-accent); }
+  .brand-sub { font-size: 12px; color: var(--et-muted); font-weight: 500; }
 
-  h1 {
-    font-size: 1.6rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  h1 span { color: #7c7cff; }
-  h1 .logo-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px; height: 34px;
-    border-radius: 9px;
-    background: linear-gradient(135deg, #7c7cff, #a07cff);
-    font-size: 1.1rem;
-    box-shadow: 0 4px 14px rgba(124,124,255,0.35);
-  }
-
-  .donate-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #1e1e30;
-    border: 1px solid #3a3a55;
-    color: #d0d0e8;
-    text-decoration: none;
-    padding: 7px 14px;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    transition: background 0.2s, border-color 0.2s, transform 0.15s;
-  }
-  .donate-btn:hover { background: #2a2a40; border-color: #7c7cff; transform: translateY(-1px); }
-
-  .card {
-    background: #1a1a24;
-    border: 1px solid #2a2a38;
-    border-radius: 16px;
-    padding: 28px;
-    width: 100%;
-    max-width: 720px;
-    margin-bottom: 20px;
-    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5);
-  }
-
-  /* Drop zone */
-  #drop {
-    border: 2px dashed #3a3a55;
-    border-radius: 12px;
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    position: relative;
-  }
-  #drop.over { border-color: #7c7cff; background: #1e1e30; }
-  #drop.has-file { border-color: #4caf7d; border-style: solid; }
-  #drop input[type=file] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-  }
-  #drop-icon { font-size: 2.5rem; margin-bottom: 12px; }
-  #drop-label { font-size: 1rem; color: #9090b0; }
-  #file-name { font-size: 0.9rem; color: #7c7cff; margin-top: 8px; font-weight: 500; }
-
-  /* Controls row */
-  .controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto auto;
-    gap: 12px;
-    margin-top: 20px;
-    align-items: end;
-  }
-  label { font-size: 0.75rem; color: #6060a0; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 6px; }
-  select {
-    width: 100%;
-    background: #111118;
-    border: 1px solid #2a2a38;
-    color: #e8e8f0;
-    padding: 8px 10px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    -webkit-appearance: none;
-    cursor: pointer;
-  }
-  select:focus { outline: none; border-color: #7c7cff; }
-
-  .checkbox-wrap {
-    display: flex;
-    flex-direction: column;
-  }
-  .checkbox-wrap label { margin-bottom: 6px; }
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    padding: 8px 0;
-  }
-  .toggle input { display: none; }
-  .toggle-track {
-    width: 36px; height: 20px;
-    background: #2a2a38;
-    border-radius: 10px;
-    position: relative;
-    transition: background 0.2s;
-  }
-  .toggle input:checked + .toggle-track { background: #7c7cff; }
-  .toggle-thumb {
-    position: absolute;
-    width: 14px; height: 14px;
-    background: #fff;
-    border-radius: 50%;
-    top: 3px; left: 3px;
-    transition: left 0.2s;
-  }
-  .toggle input:checked ~ .toggle-track .toggle-thumb { left: 19px; }
-
-  #btn {
-    background: #7c7cff;
-    color: #fff;
-    border: none;
-    padding: 9px 22px;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, opacity 0.2s;
-    white-space: nowrap;
-    align-self: end;
-  }
-  #btn:hover { background: #6060e0; }
-  #btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* Progress */
-  #progress-wrap { margin-top: 20px; display: none; }
-  .prog-bar-bg {
-    background: #111118;
-    border-radius: 6px;
-    height: 6px;
-    overflow: hidden;
-  }
-  .prog-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #7c7cff, #a07cff);
-    border-radius: 6px;
-    width: 0%;
-    transition: width 0.4s ease;
-  }
-  #prog-label {
-    font-size: 0.8rem;
-    color: #6060a0;
-    margin-top: 6px;
-  }
-
-  /* Info bar */
-  #info-bar {
-    display: none;
-    font-size: 0.8rem;
-    color: #6060a0;
-    margin-top: 8px;
-    gap: 16px;
-  }
-  #info-bar span { color: #9090c0; }
-
-  /* Output */
-  .output-card { display: none; }
-  .tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 16px;
-    background: #111118;
-    border-radius: 8px;
-    padding: 4px;
-    width: fit-content;
-  }
-  .tab {
-    padding: 6px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    color: #6060a0;
-    transition: background 0.15s, color 0.15s;
-    user-select: none;
-  }
-  .tab.active { background: #2a2a40; color: #e8e8f0; }
-
-  .output-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .dl-btn {
-    background: #1e1e30;
-    border: 1px solid #3a3a55;
-    color: #9090c0;
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-  }
-  .dl-btn:hover { background: #2a2a40; color: #e8e8f0; }
-
-  #output-text {
-    background: #111118;
-    border: 1px solid #1e1e2e;
-    border-radius: 10px;
-    padding: 16px;
-    font-size: 0.88rem;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    max-height: 420px;
-    overflow-y: auto;
-    color: #c8c8e0;
-    font-family: "SF Mono", "Fira Code", monospace;
-  }
-
-  /* Segment rows (plain-text tab with read-aloud) */
-  #segment-list {
-    background: #111118;
-    border: 1px solid #1e1e2e;
-    border-radius: 10px;
-    max-height: 420px;
-    overflow-y: auto;
-  }
-  .seg-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 10px 14px;
-    border-bottom: 1px solid #1a1a26;
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 10px;
+    border: 1px solid var(--et-border-strong); background: var(--et-surface);
+    color: var(--et-muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
     transition: background 0.15s;
   }
-  .seg-row:last-child { border-bottom: none; }
-  .seg-row:hover { background: #16161f; }
-  .seg-ts {
-    flex-shrink: 0;
-    color: #4a4a6a;
-    font-size: 0.72rem;
-    font-family: "SF Mono", "Fira Code", monospace;
-    padding-top: 3px;
-    width: 44px;
-  }
-  .seg-text {
-    flex: 1;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    color: #d0d0e4;
-  }
-  .seg-listen {
-    flex-shrink: 0;
-    background: #1e1e30;
-    border: 1px solid #2e2e48;
-    color: #9090c8;
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
-  }
-  .seg-listen:hover { background: #2a2a48; border-color: #7c7cff; color: #fff; transform: scale(1.06); }
-  .seg-listen.playing { background: #7c7cff; border-color: #7c7cff; color: #fff; animation: pulse 1s ease-in-out infinite; }
-  .seg-listen.loading { opacity: 0.5; cursor: wait; animation: none; }
-  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(124,124,255,0.5); } 50% { box-shadow: 0 0 0 6px rgba(124,124,255,0); } }
+  .icon-btn:hover { background: var(--et-hover); }
 
-  .read-all-btn {
-    background: #1e1e30;
-    border: 1px solid #3a3a55;
-    color: #9090c0;
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+  .ghost-btn {
+    display: flex; align-items: center; gap: 7px; padding: 9px 15px;
+    border-radius: 10px; border: 1px solid var(--et-border-strong); background: var(--et-surface);
+    color: var(--et-btn-ink); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s;
   }
-  .read-all-btn:hover { background: #2a2a40; color: #e8e8f0; }
-  .read-all-btn.active { background: #7c7cff; border-color: #7c7cff; color: #fff; }
+  .ghost-btn:hover { background: var(--et-hover); }
+  .ghost-btn.active { background: var(--et-accent-tint); color: var(--et-accent-ink); border-color: var(--et-accent-border); }
+
+  .coffee-btn {
+    display: flex; align-items: center; gap: 8px; padding: 9px 16px;
+    border-radius: 10px; background: #FFDD00; color: #0D0C22; text-decoration: none;
+    font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 5px 14px -5px rgba(255,201,0,0.75);
+    transition: background 0.15s;
+  }
+  .coffee-btn:hover { background: #FFE84D; }
+
+  /* App shell */
+  .app-card {
+    background: var(--et-surface); border: 1px solid var(--et-border-strong);
+    border-radius: 20px; box-shadow: var(--et-shadow); overflow: hidden;
+  }
+  .app-grid { display: grid; grid-template-columns: 420px 1fr; min-height: 560px; }
+
+  .panel-left {
+    border-right: 1px solid var(--et-border); padding: 26px;
+    display: flex; flex-direction: column; gap: 22px; background: var(--et-panel);
+  }
+
+  /* Dropzone */
+  #drop {
+    border: 2px dashed var(--et-dz-border); border-radius: 16px; background: var(--et-dz-bg);
+    padding: 34px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px;
+    text-align: center; cursor: pointer; position: relative;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  #drop:hover, #drop.over { border-color: var(--et-accent); background: var(--et-accent-tint); }
+  #drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .dz-icon {
+    width: 56px; height: 56px; border-radius: 15px; background: var(--et-surface);
+    border: 1px solid var(--et-accent-border); display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px -10px rgba(91,75,232,0.35); color: var(--et-accent);
+  }
+  .dz-title { font-size: 15px; font-weight: 700; color: var(--et-ink); }
+  .dz-sub { font-size: 13px; color: var(--et-muted); }
+  .dz-sub span { color: var(--et-accent); font-weight: 600; }
+  .dz-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 280px; }
+  .dz-chip {
+    font-size: 11px; font-weight: 600; color: var(--et-chip-text); background: var(--et-chip-bg);
+    border: 1px solid var(--et-chip-border); padding: 3px 8px; border-radius: 6px;
+    font-family: 'Geist Mono', monospace;
+  }
+
+  /* File card */
+  .file-card {
+    border: 1px solid var(--et-accent-border); border-radius: 16px; background: var(--et-surface);
+    padding: 18px; display: none; flex-direction: column; gap: 14px;
+  }
+  .file-card.show { display: flex; }
+  .file-row { display: flex; align-items: center; gap: 12px; }
+  .file-icon {
+    width: 42px; height: 42px; border-radius: 11px; background: var(--et-accent-tint);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--et-accent);
+  }
+  .file-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .file-name { font-size: 14px; font-weight: 600; color: var(--et-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-sub { font-size: 12px; color: var(--et-muted-2); font-family: 'Geist Mono', monospace; }
+  .file-remove {
+    width: 30px; height: 30px; border-radius: 8px; border: none; background: transparent;
+    color: var(--et-faint); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .file-remove:hover { background: var(--et-hover); color: var(--et-muted); }
+
+  .prog-wrap { display: none; flex-direction: column; gap: 8px; }
+  .prog-wrap.show { display: flex; }
+  .prog-track { height: 6px; border-radius: 99px; background: var(--et-progress-track); overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #5B4BE8, #7C6BFF); width: 0%; transition: width 0.3s; }
+  .prog-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--et-muted); font-weight: 500; }
+  .prog-labels span:last-child { font-family: 'Geist Mono', monospace; }
+
+  /* Settings */
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field-label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--et-muted-2); }
+  .pill-list { display: flex; flex-direction: column; gap: 6px; }
+  .pill-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 11px 13px; border-radius: 11px; border: 1px solid var(--et-border); background: var(--et-surface);
+    cursor: pointer; text-align: left; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .pill-row.sel { border-color: var(--et-accent); background: var(--et-accent-soft); }
+  .pill-title { font-size: 13px; font-weight: 600; color: var(--et-ink); }
+  .pill-row.sel .pill-title { color: var(--et-accent-ink); }
+  .pill-note { font-size: 11px; color: var(--et-muted-2); }
+  .pill-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--et-muted-2); background: var(--et-tag-bg); padding: 3px 7px; border-radius: 6px;
+  }
+  .pill-row.sel .pill-tag { color: var(--et-accent); background: var(--et-accent-tint); }
+
+  .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip-btn {
+    padding: 7px 12px; border-radius: 9px; border: 1px solid var(--et-border); background: var(--et-surface);
+    color: var(--et-btn-ink); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .chip-btn.sel { border-color: var(--et-accent); background: var(--et-accent); color: #FFFFFF; }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between; padding: 13px 15px;
+    border-radius: 12px; border: 1px solid var(--et-border); background: var(--et-surface); cursor: pointer;
+  }
+  .toggle-title { font-size: 13px; font-weight: 600; color: var(--et-ink); }
+  .toggle-note { font-size: 11px; color: var(--et-muted-2); }
+  .switch-track {
+    width: 40px; height: 23px; border-radius: 99px; background: var(--et-track); padding: 3px;
+    display: flex; transition: background 0.2s; flex-shrink: 0;
+  }
+  .switch-track.on { background: var(--et-accent); }
+  .switch-knob { width: 17px; height: 17px; border-radius: 99px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s; }
+  .switch-track.on .switch-knob { transform: translateX(17px); }
+
+  #btn {
+    margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 15px; border-radius: 13px; border: none;
+    background: linear-gradient(150deg, #5B4BE8, #7C6BFF); color: #FFFFFF;
+    font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 10px 24px -10px rgba(91,75,232,0.55); transition: transform 0.15s, opacity 0.15s;
+  }
+  #btn:hover { transform: translateY(-1px); }
+  #btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .spin { animation: et-spin 0.8s linear infinite; }
 
   #error-msg {
-    color: #ff6b6b;
-    font-size: 0.88rem;
-    margin-top: 12px;
-    display: none;
+    color: var(--et-error); font-size: 0.85rem; display: none; padding: 2px 2px;
+  }
+
+  /* Right panel */
+  .panel-right { display: flex; flex-direction: column; background: var(--et-surface); }
+
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; padding: 48px; text-align: center;
+  }
+  .wave-bars { display: flex; align-items: flex-end; gap: 4px; height: 44px; }
+  .wave-bars div { width: 5px; border-radius: 99px; background: var(--et-wave); }
+  .empty-title { font-size: 16px; font-weight: 700; color: var(--et-body); }
+  .empty-sub { font-size: 13px; color: var(--et-muted-2); line-height: 1.5; max-width: 320px; }
+
+  .result-toolbar {
+    display: flex; align-items: center; justify-content: space-between; padding: 16px 24px;
+    border-bottom: 1px solid var(--et-border); flex-wrap: wrap; gap: 10px;
+  }
+  .tab-group { display: flex; gap: 4px; background: var(--et-tab-group); padding: 4px; border-radius: 11px; }
+  .tab-btn {
+    padding: 7px 16px; border-radius: 8px; border: none; font-family: inherit; font-size: 13px;
+    font-weight: 600; cursor: pointer; background: transparent; color: var(--et-muted);
+  }
+  .tab-btn.active { background: var(--et-tab-active); color: var(--et-ink); box-shadow: var(--et-tab-shadow); }
+  .toolbar-actions { display: flex; align-items: center; gap: 8px; }
+  .toolbar-btn {
+    display: flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: 10px;
+    border: 1px solid var(--et-accent-border); background: transparent; color: var(--et-accent);
+    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .toolbar-btn.on { background: var(--et-accent); color: #FFFFFF; }
+  .icon-only-btn {
+    width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--et-border-strong);
+    background: var(--et-surface); color: var(--et-muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .icon-only-btn:hover { background: var(--et-hover); }
+  .invert-btn {
+    display: flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 10px; border: none;
+    background: var(--et-invert-bg); color: var(--et-invert-ink); font-family: inherit; font-size: 13px;
+    font-weight: 600; cursor: pointer;
+  }
+  .invert-btn:hover { background: var(--et-invert-hover); }
+
+  .stats-strip { display: flex; gap: 28px; padding: 12px 24px; border-bottom: 1px solid var(--et-border); background: var(--et-panel); flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; gap: 1px; }
+  .stat-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--et-faint-2); }
+  .stat-val { font-size: 13px; font-weight: 600; color: var(--et-strong); font-family: 'Geist Mono', monospace; }
+  .stat-val.green { color: var(--et-green); }
+
+  .tab-content { flex: 1; overflow: auto; }
+  #segment-list { padding: 10px 12px; }
+  .seg-row {
+    display: grid; grid-template-columns: 44px 1fr auto; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; border-radius: 12px; transition: background 0.15s;
+  }
+  .seg-row:hover { background: var(--et-hover); }
+  .seg-ts { font-size: 12px; font-weight: 500; color: var(--et-srt-time); font-family: 'Geist Mono', monospace; padding-top: 3px; }
+  .seg-text { font-size: 15px; line-height: 1.6; color: var(--et-ink-soft); }
+  .seg-listen {
+    flex-shrink: 0; background: transparent; border: 1px solid var(--et-accent-border); color: var(--et-accent);
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; transition: background 0.15s, color 0.15s, transform 0.15s;
+  }
+  .seg-listen:hover { background: var(--et-accent-tint); transform: scale(1.06); }
+  .seg-listen.playing { background: var(--et-accent); color: #fff; animation: et-pulse 1s ease-in-out infinite; }
+  .seg-listen.loading { opacity: 0.5; cursor: wait; animation: none; }
+
+  #srt-list { padding: 18px 24px; display: flex; flex-direction: column; gap: 4px; }
+  .srt-block { display: grid; grid-template-columns: 30px 1fr; gap: 14px; padding: 12px; border-radius: 12px; }
+  .srt-block:hover { background: var(--et-hover); }
+  .srt-num { font-size: 13px; font-weight: 700; color: var(--et-srt-num); font-family: 'Geist Mono', monospace; padding-top: 2px; }
+  .srt-range { font-size: 11px; font-weight: 500; color: var(--et-srt-time); font-family: 'Geist Mono', monospace; }
+  .srt-text { font-size: 15px; line-height: 1.55; color: var(--et-ink-soft); margin-top: 5px; }
+
+  /* Processing skeleton */
+  .skeleton-wrap { flex: 1; display: none; flex-direction: column; gap: 18px; padding: 34px 36px; }
+  .skeleton-wrap.show { display: flex; }
+  .skeleton-status { display: flex; align-items: center; gap: 10px; color: var(--et-accent); font-size: 13px; font-weight: 600; }
+  .skeleton-bars { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
+  .skeleton-bars div { width: 3px; height: 18px; background: var(--et-accent); border-radius: 99px; transform-origin: bottom; animation: et-bar 1s ease-in-out infinite; }
+  .skel-row { height: 13px; border-radius: 7px; background: var(--et-skel); animation: et-pulse 1.4s ease-in-out infinite; }
+
+  /* Free text TTS card */
+  .free-tts-card {
+    background: var(--et-surface); border: 1px solid var(--et-border-strong); border-radius: 20px;
+    box-shadow: var(--et-shadow); padding: 24px; display: flex; flex-direction: column; gap: 14px;
+  }
+  .free-tts-title { font-size: 14px; font-weight: 700; color: var(--et-ink); display: flex; align-items: center; gap: 8px; }
+  #free-text {
+    width: 100%; min-height: 100px; background: var(--et-panel); border: 1px solid var(--et-border);
+    color: var(--et-ink); border-radius: 12px; padding: 14px; font-size: 14px; font-family: inherit;
+    resize: vertical;
+  }
+  #free-text:focus { outline: none; border-color: var(--et-accent); }
+
+  @media (max-width: 900px) {
+    .app-grid { grid-template-columns: 1fr; }
+    .panel-left { border-right: none; border-bottom: 1px solid var(--et-border); }
+    body { padding: 20px 14px 60px; }
+    .stats-strip { gap: 16px; }
   }
 </style>
 </head>
-<body>
+<body data-et-theme="dark">
 
-<div class="topbar">
-  <h1>
-    <svg class="logo-mark" width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
-      <rect width="34" height="34" rx="9" fill="url(#g)"/>
-      <path d="M17 8a4 4 0 0 0-4 4v5a4 4 0 0 0 8 0v-5a4 4 0 0 0-4-4z" fill="#fff"/>
-      <path d="M11 17v1a6 6 0 0 0 12 0v-1" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-      <line x1="17" y1="24" x2="17" y2="27" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="34" y2="34" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#7c7cff"/>
-          <stop offset="1" stop-color="#a07cff"/>
-        </linearGradient>
-      </defs>
-    </svg>
-    EditorTools <span>Whisper</span>
-  </h1>
-  <a class="donate-btn" href="https://buymeacoffee.com/spasspasov" target="_blank" rel="noopener">☕ Дари</a>
-</div>
-
-<div class="card">
-  <label style="margin-bottom:10px;">🔊 Свободен текст (Text-to-Speech)</label>
-  <textarea id="free-text" placeholder="Напиши или постави текст тук, за да го чуеш на глас..." style="width:100%; min-height:100px; background:#111118; border:1px solid #2a2a38; color:#e8e8f0; border-radius:10px; padding:12px; font-size:0.92rem; font-family:inherit; resize:vertical;"></textarea>
-  <div style="display:flex; justify-content:flex-end; margin-top:10px; gap:8px;">
-    <button id="free-tts-btn" class="read-all-btn">🔊 Прочети текста</button>
-  </div>
-  <div id="free-tts-error" style="color:#ff6b6b; font-size:0.85rem; margin-top:8px; display:none;"></div>
-</div>
-
-<div class="card">
-  <div id="drop">
-    <input type="file" id="file-input" accept="audio/*,video/*">
-    <div id="drop-icon">🎵</div>
-    <div id="drop-label">Пусни аудио/видео файл тук<br><small style="font-size:0.78rem;color:#505070">MP4 · MXF · MOV · MP3 · WAV · M4A · AAC · FLAC</small></div>
-    <div id="file-name"></div>
-  </div>
-
-  <div class="controls">
-    <div>
-      <label>Модел</label>
-      <select id="model">
-        <option value="tiny">Tiny (бърз, по-малко точен)</option>
-        <option value="base">Base</option>
-        <option value="small" selected>Small (препоръчан)</option>
-        <option value="medium">Medium (по-бавен, по-точен)</option>
-        <option value="large-v2">Large v2 (най-точен)</option>
-        <option value="large-v3">Large v3</option>
-      </select>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="23" height="23" viewBox="0 0 24 24">
+          <rect x="1.6" y="8.5" width="2.6" height="7" rx="1.3" fill="#FFFFFF" opacity="0.72"></rect>
+          <rect x="6.5" y="5" width="2.6" height="14" rx="1.3" fill="#FFFFFF"></rect>
+          <rect x="11.4" y="2.5" width="2.6" height="19" rx="1.3" fill="#FFFFFF"></rect>
+          <rect x="16.3" y="7" width="2.6" height="10" rx="1.3" fill="#FFFFFF"></rect>
+          <rect x="21.2" y="9" width="2.6" height="6" rx="1.3" fill="#FFFFFF" opacity="0.72"></rect>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">Editor<span>Tools</span></span>
+        <span class="brand-sub">Аудио и видео в текст</span>
+      </div>
     </div>
-    <div>
-      <label>Език</label>
-      <select id="language">
-        <option value="">Автоматично</option>
-        <option value="bg" selected>Български (bg)</option>
-        <option value="en">English (en)</option>
-        <option value="de">Deutsch (de)</option>
-        <option value="fr">Français (fr)</option>
-        <option value="es">Español (es)</option>
-        <option value="it">Italiano (it)</option>
-        <option value="ru">Русский (ru)</option>
-        <option value="pt">Português (pt)</option>
-      </select>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="theme-toggle" title="Смени темата">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+        </svg>
+      </button>
+      <button class="ghost-btn" id="scroll-tts-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        Text-to-Speech
+      </button>
+      <a class="coffee-btn" href="https://buymeacoffee.com/spasspasov" target="_blank" rel="noopener">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path><line x1="6" y1="1.5" x2="6" y2="4"></line><line x1="10" y1="1.5" x2="10" y2="4"></line><line x1="14" y1="1.5" x2="14" y2="4"></line></svg>
+        Buy me a coffee
+      </a>
     </div>
-    <div class="checkbox-wrap">
-      <label>Word-level</label>
-      <label class="toggle">
-        <input type="checkbox" id="word-ts">
-        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-        <span style="font-size:0.85rem;color:#7070a0">Думи</span>
-      </label>
+  </header>
+
+  <div class="app-card">
+    <div class="app-grid">
+
+      <!-- LEFT: input + settings -->
+      <div class="panel-left">
+        <div id="drop">
+          <input type="file" id="file-input" accept="audio/*,video/*">
+          <div class="dz-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m8 7 4-4 4 4"></path><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"></path></svg>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <span class="dz-title">Пусни аудио/видео файл тук</span>
+            <span class="dz-sub">или <span>избери от устройството</span></span>
+          </div>
+          <div class="dz-chips">
+            <span class="dz-chip">MP4</span><span class="dz-chip">MXF</span><span class="dz-chip">MOV</span>
+            <span class="dz-chip">MP3</span><span class="dz-chip">WAV</span><span class="dz-chip">M4A</span>
+            <span class="dz-chip">AAC</span><span class="dz-chip">FLAC</span>
+          </div>
+        </div>
+
+        <div class="file-card" id="file-card">
+          <div class="file-row">
+            <div class="file-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+            </div>
+            <div class="file-meta">
+              <span class="file-name" id="file-name-el">—</span>
+              <span class="file-sub" id="file-sub-el">—</span>
+            </div>
+            <button class="file-remove" id="file-remove-btn" title="Премахни">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            </button>
+          </div>
+          <div class="prog-wrap" id="progress-wrap">
+            <div class="prog-track"><div class="prog-fill" id="prog-bar"></div></div>
+            <div class="prog-labels"><span id="prog-label">Стартиране...</span><span id="prog-pct">0%</span></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Модел</span>
+          <div class="pill-list" id="model-list"></div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Език</span>
+          <div class="chip-list" id="lang-list"></div>
+        </div>
+
+        <div class="toggle-row" id="word-toggle-row">
+          <div>
+            <div class="toggle-title">Word-level времена</div>
+            <div class="toggle-note">Времеви маркер за всяка дума</div>
+          </div>
+          <div class="switch-track" id="word-switch"><div class="switch-knob"></div></div>
+        </div>
+
+        <div id="error-msg"></div>
+
+        <button id="btn" disabled>Транскрибирай</button>
+      </div>
+
+      <!-- RIGHT: result -->
+      <div class="panel-right">
+        <div class="empty-state" id="empty-state">
+          <div class="wave-bars">
+            <div style="height:18px"></div><div style="height:30px"></div><div style="height:12px"></div>
+            <div style="height:38px"></div><div style="height:22px"></div><div style="height:44px"></div>
+            <div style="height:16px"></div><div style="height:28px"></div><div style="height:20px"></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:5px; max-width:320px;">
+            <span class="empty-title">Тук ще се появи транскрипцията</span>
+            <span class="empty-sub">Качи файл и натисни „Транскрибирай". Резултатът се появява като текст и SRT субтитри.</span>
+          </div>
+        </div>
+
+        <div class="skeleton-wrap" id="skeleton-wrap">
+          <div class="skeleton-status">
+            <div class="skeleton-bars">
+              <div style="animation-delay:0s"></div><div style="animation-delay:0.15s"></div>
+              <div style="animation-delay:0.3s"></div><div style="animation-delay:0.45s"></div>
+            </div>
+            Транскрипцията се ражда…
+          </div>
+          <div class="skel-row" style="width:92%"></div>
+          <div class="skel-row" style="width:78%"></div>
+          <div class="skel-row" style="width:85%"></div>
+          <div class="skel-row" style="width:60%"></div>
+          <div class="skel-row" style="width:88%"></div>
+        </div>
+
+        <div id="result-view" style="display:none; flex-direction:column; height:100%;">
+          <div class="result-toolbar">
+            <div class="tab-group">
+              <button class="tab-btn active" id="tab-text-btn">Текст</button>
+              <button class="tab-btn" id="tab-srt-btn">SRT</button>
+            </div>
+            <div class="toolbar-actions">
+              <button class="toolbar-btn" id="read-all-btn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                Прочети всичко
+              </button>
+              <button class="icon-only-btn" id="copy-btn" title="Копирай">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+              <button class="invert-btn" id="dl-btn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>
+                Изтегли
+              </button>
+            </div>
+          </div>
+
+          <div class="stats-strip">
+            <div class="stat"><span class="stat-label">Език</span><span class="stat-val" id="info-lang">—</span></div>
+            <div class="stat"><span class="stat-label">Точност</span><span class="stat-val green" id="info-prob">—</span></div>
+            <div class="stat"><span class="stat-label">Продължителност</span><span class="stat-val" id="info-dur">—</span></div>
+            <div class="stat"><span class="stat-label">Сегменти</span><span class="stat-val" id="info-count">—</span></div>
+          </div>
+
+          <div class="tab-content" id="segment-list-wrap"><div id="segment-list"></div></div>
+          <div class="tab-content" id="srt-list" style="display:none;"></div>
+        </div>
+      </div>
+
     </div>
-    <button id="btn" disabled>Транскрибирай</button>
   </div>
 
-  <div id="error-msg"></div>
-
-  <div id="progress-wrap">
-    <div class="prog-bar-bg"><div class="prog-bar" id="prog-bar"></div></div>
-    <div id="prog-label">Стартиране...</div>
-  </div>
-  <div id="info-bar">
-    Език: <span id="info-lang">—</span> &nbsp;|&nbsp;
-    Точност: <span id="info-prob">—</span> &nbsp;|&nbsp;
-    Продължителност: <span id="info-dur">—</span>
-  </div>
-</div>
-
-<div class="card output-card" id="output-card">
-  <div class="output-actions">
-    <div class="tabs">
-      <div class="tab active" data-tab="plain">Текст</div>
-      <div class="tab" data-tab="srt">SRT</div>
+  <div class="free-tts-card" id="free-tts-anchor">
+    <div class="free-tts-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+      Свободен текст (Text-to-Speech)
     </div>
-    <div style="display:flex; gap:8px;">
-      <button class="read-all-btn" id="read-all-btn">🔊 Прочети всичко</button>
-      <button class="dl-btn" id="dl-btn">⬇ Изтегли</button>
+    <textarea id="free-text" placeholder="Напиши или постави текст тук, за да го чуеш на глас..."></textarea>
+    <div style="display:flex; justify-content:flex-end;">
+      <button class="toolbar-btn" id="free-tts-btn">Прочети текста</button>
     </div>
+    <div id="free-tts-error" style="color:var(--et-error); font-size:0.85rem; display:none;"></div>
   </div>
-  <div id="segment-list"></div>
-  <div id="output-text" style="display:none"></div>
 </div>
 
 <script>
+/* ---------- Theme ---------- */
+const THEME_KEY = 'et-theme';
+function applyTheme(t) {
+  document.body.setAttribute('data-et-theme', t);
+  const icon = document.getElementById('theme-icon');
+  if (t === 'dark') {
+    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>';
+  } else {
+    icon.innerHTML = '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>';
+  }
+}
+let currentTheme = localStorage.getItem(THEME_KEY) || 'dark';
+applyTheme(currentTheme);
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, currentTheme);
+  applyTheme(currentTheme);
+});
+document.getElementById('scroll-tts-btn').addEventListener('click', () => {
+  document.getElementById('free-tts-anchor').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+/* ---------- Model / language pills ---------- */
+const MODELS = [
+  { id: 'tiny', name: 'Tiny', note: 'най-бърз, по-малко точен', tag: 'бърз' },
+  { id: 'base', name: 'Base', note: 'базов вариант', tag: 'база' },
+  { id: 'small', name: 'Small', note: 'препоръчан баланс', tag: 'баланс' },
+  { id: 'medium', name: 'Medium', note: 'по-бавен, по-точен', tag: 'точен' },
+  { id: 'large-v2', name: 'Large v2', note: 'най-точен', tag: 'макс' },
+  { id: 'large-v3', name: 'Large v3', note: 'най-нов, най-точен', tag: 'макс' },
+];
+const LANGS = [
+  { id: '', label: 'Автоматично' },
+  { id: 'bg', label: 'Български' },
+  { id: 'en', label: 'English' },
+  { id: 'de', label: 'Deutsch' },
+  { id: 'fr', label: 'Français' },
+  { id: 'es', label: 'Español' },
+  { id: 'it', label: 'Italiano' },
+  { id: 'ru', label: 'Русский' },
+  { id: 'pt', label: 'Português' },
+];
+
+let selectedModel = 'small';
+let selectedLang = 'bg';
+let wordTsOn = false;
+
+const modelList = document.getElementById('model-list');
+MODELS.forEach(m => {
+  const row = document.createElement('button');
+  row.className = 'pill-row' + (m.id === selectedModel ? ' sel' : '');
+  row.dataset.id = m.id;
+  row.innerHTML = `<div><div class="pill-title">${m.name}</div><div class="pill-note">${m.note}</div></div><span class="pill-tag">${m.tag}</span>`;
+  row.addEventListener('click', () => {
+    selectedModel = m.id;
+    modelList.querySelectorAll('.pill-row').forEach(r => r.classList.remove('sel'));
+    row.classList.add('sel');
+  });
+  modelList.appendChild(row);
+});
+
+const langList = document.getElementById('lang-list');
+LANGS.forEach(l => {
+  const btn = document.createElement('button');
+  btn.className = 'chip-btn' + (l.id === selectedLang ? ' sel' : '');
+  btn.textContent = l.label;
+  btn.addEventListener('click', () => {
+    selectedLang = l.id;
+    langList.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+  });
+  langList.appendChild(btn);
+});
+
+const wordSwitch = document.getElementById('word-switch');
+document.getElementById('word-toggle-row').addEventListener('click', () => {
+  wordTsOn = !wordTsOn;
+  wordSwitch.classList.toggle('on', wordTsOn);
+});
+
+/* ---------- File drop ---------- */
 const drop = document.getElementById('drop');
 const fileInput = document.getElementById('file-input');
-const fileName = document.getElementById('file-name');
+const fileCard = document.getElementById('file-card');
+const fileNameEl = document.getElementById('file-name-el');
+const fileSubEl = document.getElementById('file-sub-el');
 const btn = document.getElementById('btn');
-const modelSel = document.getElementById('model');
-const langSel = document.getElementById('language');
-const wordTs = document.getElementById('word-ts');
-const progWrap = document.getElementById('progress-wrap');
+const progressWrap = document.getElementById('progress-wrap');
 const progBar = document.getElementById('prog-bar');
 const progLabel = document.getElementById('prog-label');
-const infoBar = document.getElementById('info-bar');
-const outputCard = document.getElementById('output-card');
-const outputText = document.getElementById('output-text');
-const segmentList = document.getElementById('segment-list');
+const progPct = document.getElementById('prog-pct');
 const errorMsg = document.getElementById('error-msg');
-const dlBtn = document.getElementById('dl-btn');
-const readAllBtn = document.getElementById('read-all-btn');
 
 let currentFile = null;
 let segments = [];
-let activeTab = 'plain';
+let activeTab = 'text';
 let totalDuration = 0;
+
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+function fmtSize(bytes) {
+  if (bytes > 1e6) return (bytes / 1e6).toFixed(1) + ' MB';
+  return (bytes / 1e3).toFixed(0) + ' KB';
+}
+
+function setFile(f) {
+  currentFile = f;
+  fileNameEl.textContent = f.name;
+  fileSubEl.textContent = fmtSize(f.size);
+  fileCard.classList.add('show');
+  btn.disabled = false;
+}
+
+document.getElementById('file-remove-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  currentFile = null;
+  fileInput.value = '';
+  fileCard.classList.remove('show');
+  btn.disabled = true;
+});
+
+/* ---------- Tabs ---------- */
+const tabTextBtn = document.getElementById('tab-text-btn');
+const tabSrtBtn = document.getElementById('tab-srt-btn');
+const segmentListWrap = document.getElementById('segment-list-wrap');
+const srtListEl = document.getElementById('srt-list');
+const segmentList = document.getElementById('segment-list');
+
+tabTextBtn.addEventListener('click', () => { activeTab = 'text'; renderOutput(); });
+tabSrtBtn.addEventListener('click', () => { activeTab = 'srt'; renderOutput(); });
+
+function renderOutput() {
+  tabTextBtn.classList.toggle('active', activeTab === 'text');
+  tabSrtBtn.classList.toggle('active', activeTab === 'srt');
+  segmentListWrap.style.display = activeTab === 'text' ? 'block' : 'none';
+  srtListEl.style.display = activeTab === 'srt' ? 'block' : 'none';
+  if (activeTab === 'text') renderSegmentList();
+  else renderSrtList();
+}
+
+function renderSegmentList() {
+  segmentList.innerHTML = '';
+  segments.forEach((seg, idx) => {
+    const row = document.createElement('div');
+    row.className = 'seg-row';
+    const mm = Math.floor(seg.start / 60), ss = Math.floor(seg.start % 60);
+    row.innerHTML = `
+      <span class="seg-ts">${mm}:${ss.toString().padStart(2,'0')}</span>
+      <span class="seg-text">${seg.text.trim()}</span>
+    `;
+    const listenBtn = document.createElement('button');
+    listenBtn.className = 'seg-listen';
+    listenBtn.textContent = '▶';
+    listenBtn.title = 'Чуй';
+    listenBtn.addEventListener('click', () => {
+      if (readAllActive) stopReadAll();
+      if (listenBtn.classList.contains('playing')) { stopAudio(); return; }
+      playSegment(idx, listenBtn);
+    });
+    row.appendChild(listenBtn);
+    segmentList.appendChild(row);
+  });
+}
+
+function renderSrtList() {
+  srtListEl.innerHTML = '';
+  segments.forEach((s, i) => {
+    const block = document.createElement('div');
+    block.className = 'srt-block';
+    block.innerHTML = `
+      <span class="srt-num">${i+1}</span>
+      <div>
+        <div class="srt-range">${fmtSRT(s.start)} → ${fmtSRT(s.end)}</div>
+        <div class="srt-text">${s.text.trim()}</div>
+      </div>
+    `;
+    srtListEl.appendChild(block);
+  });
+}
+
+function fmtSRT(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60), ms = Math.floor((sec % 1) * 1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+}
+function toSRT(segs) {
+  return segs.map((s, i) => `${i+1}\n${fmtSRT(s.start)} --> ${fmtSRT(s.end)}\n${s.text.trim()}\n`).join('\n');
+}
+
+/* ---------- Transcribe ---------- */
+const emptyState = document.getElementById('empty-state');
+const skeletonWrap = document.getElementById('skeleton-wrap');
+const resultView = document.getElementById('result-view');
+
+btn.addEventListener('click', async () => {
+  if (!currentFile) return;
+  segments = []; totalDuration = 0;
+  errorMsg.style.display = 'none';
+  emptyState.style.display = 'none';
+  resultView.style.display = 'none';
+  skeletonWrap.classList.add('show');
+  progressWrap.classList.add('show');
+  progBar.style.width = '0%'; progPct.textContent = '0%';
+  progLabel.textContent = 'Качване...';
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="spin"><path d="M21 12a9 9 0 1 1-6.22-8.56"></path></svg> Обработка…';
+
+  const fd = new FormData();
+  fd.append('file', currentFile);
+  fd.append('model', selectedModel);
+  fd.append('language', selectedLang);
+  fd.append('word_timestamps', wordTsOn ? 'true' : 'false');
+
+  const res = await fetch('/transcribe', { method: 'POST', body: fd });
+  const { job_id } = await res.json();
+  progLabel.textContent = 'Зареждане на модел...';
+
+  const es = new EventSource(`/stream/${job_id}`);
+  es.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.segment) {
+      segments.push(msg.segment);
+      const pct = totalDuration > 0 ? Math.min(99, (msg.segment.end / totalDuration) * 100) : 5;
+      progBar.style.width = pct + '%'; progPct.textContent = Math.round(pct) + '%';
+      const mm = Math.floor(msg.segment.end / 60), ss = Math.floor(msg.segment.end % 60);
+      progLabel.textContent = `Транскрибирам... ${mm}:${ss.toString().padStart(2,'0')}`;
+    }
+    if (msg.done) {
+      es.close();
+      progBar.style.width = '100%'; progPct.textContent = '100%';
+      progLabel.textContent = msg.error ? `Грешка: ${msg.error}` : 'Готово';
+      skeletonWrap.classList.remove('show');
+      btn.disabled = false;
+      btn.textContent = 'Транскрибирай отново';
+
+      if (msg.info && msg.info.duration) {
+        totalDuration = msg.info.duration;
+        document.getElementById('info-lang').textContent = (msg.info.language || '—').toUpperCase();
+        document.getElementById('info-prob').textContent = msg.info.language_probability ? (msg.info.language_probability * 100).toFixed(0) + '%' : '—';
+        const d = msg.info.duration;
+        document.getElementById('info-dur').textContent = `${Math.floor(d/60)}:${Math.floor(d%60).toString().padStart(2,'0')}`;
+        document.getElementById('info-count').textContent = segments.length;
+      }
+
+      if (msg.error) {
+        errorMsg.textContent = '❌ ' + msg.error;
+        errorMsg.style.display = 'block';
+        emptyState.style.display = 'flex';
+      } else if (segments.length > 0) {
+        resultView.style.display = 'flex';
+        renderOutput();
+      } else {
+        emptyState.style.display = 'flex';
+      }
+    }
+  };
+  es.onerror = () => {
+    es.close();
+    skeletonWrap.classList.remove('show');
+    emptyState.style.display = 'flex';
+    progLabel.textContent = 'Грешка при връзката';
+    btn.disabled = false;
+    btn.textContent = 'Транскрибирай';
+  };
+});
+
+/* ---------- Copy / Download ---------- */
+document.getElementById('copy-btn').addEventListener('click', () => {
+  const content = activeTab === 'text' ? segments.map(s => s.text.trim()).join('\n') : toSRT(segments);
+  navigator.clipboard.writeText(content);
+});
+document.getElementById('dl-btn').addEventListener('click', () => {
+  const content = activeTab === 'text' ? segments.map(s => s.text.trim()).join('\n') : toSRT(segments);
+  const ext = activeTab === 'text' ? 'txt' : 'srt';
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const base = (currentFile?.name || 'transcript').replace(/\.[^.]+$/, '');
+  a.download = `${base}.${ext}`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* ---------- Text-to-speech ---------- */
 let currentAudio = null;
 let readAllActive = false;
 let readAllIndex = 0;
+const readAllBtn = document.getElementById('read-all-btn');
 
-// --- Text-to-speech (Gemini, via backend /tts) ---
 async function fetchTTS(text) {
   const fd = new FormData();
   fd.append('text', text);
@@ -467,36 +815,53 @@ async function fetchTTS(text) {
 function stopAudio() {
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
   document.querySelectorAll('.seg-listen.playing, .seg-listen.loading').forEach(b => {
-    b.classList.remove('playing', 'loading');
-    b.textContent = '🔊';
+    b.classList.remove('playing', 'loading'); b.textContent = '▶';
   });
 }
 
 async function playSegment(idx, btnEl, onEnded) {
   stopAudio();
-  btnEl.classList.add('loading');
-  btnEl.textContent = '…';
+  btnEl.classList.add('loading'); btnEl.textContent = '…';
   try {
     const url = await fetchTTS(segments[idx].text.trim());
-    btnEl.classList.remove('loading');
-    btnEl.classList.add('playing');
-    btnEl.textContent = '⏸';
+    btnEl.classList.remove('loading'); btnEl.classList.add('playing'); btnEl.textContent = '⏸';
     const audio = new Audio(url);
     currentAudio = audio;
-    audio.onended = () => {
-      btnEl.classList.remove('playing');
-      btnEl.textContent = '🔊';
-      if (onEnded) onEnded();
-    };
+    audio.onended = () => { btnEl.classList.remove('playing'); btnEl.textContent = '▶'; if (onEnded) onEnded(); };
     await audio.play();
   } catch (e) {
-    btnEl.classList.remove('loading', 'playing');
-    btnEl.textContent = '⚠️';
-    setTimeout(() => { btnEl.textContent = '🔊'; }, 1500);
+    btnEl.classList.remove('loading', 'playing'); btnEl.textContent = '⚠';
+    setTimeout(() => { btnEl.textContent = '▶'; }, 1500);
   }
 }
 
-// --- Free-text TTS ---
+function stopReadAll() {
+  readAllActive = false;
+  readAllBtn.classList.remove('on');
+  readAllBtn.querySelector('svg').style.display = '';
+  readAllBtn.lastChild.textContent = ' Прочети всичко';
+  stopAudio();
+}
+
+readAllBtn.addEventListener('click', () => {
+  if (readAllActive) { stopReadAll(); return; }
+  readAllActive = true; readAllIndex = 0;
+  readAllBtn.classList.add('on');
+  readAllBtn.lastChild.textContent = ' Спри';
+  if (activeTab !== 'text') { activeTab = 'text'; renderOutput(); }
+  playNextInSequence();
+});
+
+function playNextInSequence() {
+  if (!readAllActive || readAllIndex >= segments.length) { stopReadAll(); return; }
+  const row = segmentList.children[readAllIndex];
+  const btnEl = row ? row.querySelector('.seg-listen') : null;
+  if (!btnEl) { readAllIndex++; playNextInSequence(); return; }
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  playSegment(readAllIndex, btnEl, () => { readAllIndex++; playNextInSequence(); });
+}
+
+/* ---------- Free-text TTS ---------- */
 const freeText = document.getElementById('free-text');
 const freeTtsBtn = document.getElementById('free-tts-btn');
 const freeTtsError = document.getElementById('free-tts-error');
@@ -506,252 +871,32 @@ freeTtsBtn.addEventListener('click', async () => {
   freeTtsError.style.display = 'none';
   if (!text) return;
 
-  if (freeTtsBtn.classList.contains('active')) {
+  if (freeTtsBtn.classList.contains('on')) {
     stopAudio();
-    freeTtsBtn.classList.remove('active');
-    freeTtsBtn.textContent = '🔊 Прочети текста';
+    freeTtsBtn.classList.remove('on');
+    freeTtsBtn.textContent = 'Прочети текста';
     return;
   }
 
   stopAudio();
   freeTtsBtn.disabled = true;
-  freeTtsBtn.textContent = '… Зареждам';
+  freeTtsBtn.textContent = 'Зареждам…';
   try {
     const url = await fetchTTS(text);
     freeTtsBtn.disabled = false;
-    freeTtsBtn.classList.add('active');
-    freeTtsBtn.textContent = '⏸ Спри';
+    freeTtsBtn.classList.add('on');
+    freeTtsBtn.textContent = 'Спри';
     const audio = new Audio(url);
     currentAudio = audio;
-    audio.onended = () => {
-      freeTtsBtn.classList.remove('active');
-      freeTtsBtn.textContent = '🔊 Прочети текста';
-    };
+    audio.onended = () => { freeTtsBtn.classList.remove('on'); freeTtsBtn.textContent = 'Прочети текста'; };
     await audio.play();
   } catch (e) {
     freeTtsBtn.disabled = false;
-    freeTtsBtn.classList.remove('active');
-    freeTtsBtn.textContent = '🔊 Прочети текста';
-    freeTtsError.textContent = '❌ Грешка при генериране на глас. Провери дали TTS услугата е конфигурирана.';
+    freeTtsBtn.classList.remove('on');
+    freeTtsBtn.textContent = 'Прочети текста';
+    freeTtsError.textContent = '❌ Грешка при генериране на глас.';
     freeTtsError.style.display = 'block';
   }
-});
-
-readAllBtn.addEventListener('click', () => {
-  if (readAllActive) {
-    readAllActive = false;
-    readAllBtn.classList.remove('active');
-    readAllBtn.textContent = '🔊 Прочети всичко';
-    stopAudio();
-    return;
-  }
-  readAllActive = true;
-  readAllIndex = 0;
-  readAllBtn.classList.add('active');
-  readAllBtn.textContent = '⏹ Спри';
-  playNextInSequence();
-});
-
-function playNextInSequence() {
-  if (!readAllActive || readAllIndex >= segments.length) {
-    readAllActive = false;
-    readAllBtn.classList.remove('active');
-    readAllBtn.textContent = '🔊 Прочети всичко';
-    return;
-  }
-  const row = segmentList.children[readAllIndex];
-  const btnEl = row ? row.querySelector('.seg-listen') : null;
-  if (!btnEl) { readAllIndex++; playNextInSequence(); return; }
-  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  playSegment(readAllIndex, btnEl, () => {
-    readAllIndex++;
-    playNextInSequence();
-  });
-}
-
-// Drop zone
-drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
-drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-drop.addEventListener('drop', e => {
-  e.preventDefault();
-  drop.classList.remove('over');
-  const f = e.dataTransfer.files[0];
-  if (f) setFile(f);
-});
-fileInput.addEventListener('change', () => {
-  if (fileInput.files[0]) setFile(fileInput.files[0]);
-});
-
-function setFile(f) {
-  currentFile = f;
-  fileName.textContent = `📁 ${f.name}`;
-  drop.classList.add('has-file');
-  btn.disabled = false;
-  drop.querySelector('#drop-icon').textContent = '✅';
-}
-
-// Tabs
-document.querySelectorAll('.tab').forEach(t => {
-  t.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    activeTab = t.dataset.tab;
-    renderOutput();
-  });
-});
-
-// Transcribe
-btn.addEventListener('click', async () => {
-  if (!currentFile) return;
-  segments = [];
-  totalDuration = 0;
-  errorMsg.style.display = 'none';
-  outputCard.style.display = 'none';
-  infoBar.style.display = 'none';
-  progWrap.style.display = 'block';
-  progBar.style.width = '0%';
-  progLabel.textContent = 'Качване...';
-  btn.disabled = true;
-
-  const fd = new FormData();
-  fd.append('file', currentFile);
-  fd.append('model', modelSel.value);
-  fd.append('language', langSel.value);
-  fd.append('word_timestamps', wordTs.checked ? 'true' : 'false');
-
-  const res = await fetch('/transcribe', { method: 'POST', body: fd });
-  const { job_id } = await res.json();
-  progLabel.textContent = 'Зареждане на модел...';
-
-  const es = new EventSource(`/stream/${job_id}`);
-  es.onmessage = e => {
-    const msg = JSON.parse(e.data);
-
-    if (msg.segment) {
-      segments.push(msg.segment);
-      if (totalDuration > 0) {
-        const pct = Math.min(99, (msg.segment.end / totalDuration) * 100);
-        progBar.style.width = pct + '%';
-      } else {
-        // Pulse animation until we know duration
-        progBar.style.width = '5%';
-      }
-      const mm = Math.floor(msg.segment.end / 60);
-      const ss = Math.floor(msg.segment.end % 60);
-      progLabel.textContent = `Транскрибирам... ${mm}:${ss.toString().padStart(2,'0')}`;
-    }
-
-    if (msg.done) {
-      es.close();
-      progBar.style.width = '100%';
-      progLabel.textContent = msg.error ? `Грешка: ${msg.error}` : 'Готово ✓';
-
-      if (msg.info && msg.info.duration) {
-        totalDuration = msg.info.duration;
-        document.getElementById('info-lang').textContent = msg.info.language || '—';
-        document.getElementById('info-prob').textContent =
-          msg.info.language_probability ? (msg.info.language_probability * 100).toFixed(1) + '%' : '—';
-        const d = msg.info.duration;
-        document.getElementById('info-dur').textContent =
-          `${Math.floor(d/60)}:${Math.floor(d%60).toString().padStart(2,'0')}`;
-        infoBar.style.display = 'flex';
-      }
-
-      if (msg.error) {
-        errorMsg.textContent = '❌ ' + msg.error;
-        errorMsg.style.display = 'block';
-      } else if (segments.length > 0) {
-        outputCard.style.display = 'block';
-        renderOutput();
-      }
-
-      btn.disabled = false;
-    }
-  };
-
-  es.onerror = () => {
-    es.close();
-    progLabel.textContent = 'Грешка при връзката';
-    btn.disabled = false;
-  };
-});
-
-// Render
-function renderOutput() {
-  if (activeTab === 'plain') {
-    segmentList.style.display = 'block';
-    outputText.style.display = 'none';
-    readAllBtn.style.display = 'inline-flex';
-    renderSegmentList();
-  } else {
-    segmentList.style.display = 'none';
-    outputText.style.display = 'block';
-    readAllBtn.style.display = 'none';
-    outputText.textContent = toSRT(segments);
-  }
-}
-
-function renderSegmentList() {
-  segmentList.innerHTML = '';
-  segments.forEach((seg, idx) => {
-    const row = document.createElement('div');
-    row.className = 'seg-row';
-
-    const ts = document.createElement('div');
-    ts.className = 'seg-ts';
-    const mm = Math.floor(seg.start / 60);
-    const ss = Math.floor(seg.start % 60);
-    ts.textContent = `${mm}:${ss.toString().padStart(2, '0')}`;
-
-    const text = document.createElement('div');
-    text.className = 'seg-text';
-    text.textContent = seg.text.trim();
-
-    const listenBtn = document.createElement('button');
-    listenBtn.className = 'seg-listen';
-    listenBtn.textContent = '🔊';
-    listenBtn.title = 'Чуй';
-    listenBtn.addEventListener('click', () => {
-      if (readAllActive) { readAllActive = false; readAllBtn.classList.remove('active'); readAllBtn.textContent = '🔊 Прочети всичко'; }
-      if (listenBtn.classList.contains('playing')) { stopAudio(); return; }
-      playSegment(idx, listenBtn);
-    });
-
-    row.appendChild(ts);
-    row.appendChild(text);
-    row.appendChild(listenBtn);
-    segmentList.appendChild(row);
-  });
-}
-
-function toSRT(segs) {
-  return segs.map((s, i) => {
-    return `${i+1}\n${fmtSRT(s.start)} --> ${fmtSRT(s.end)}\n${s.text.trim()}\n`;
-  }).join('\n');
-}
-
-function fmtSRT(sec) {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = Math.floor(sec % 60);
-  const ms = Math.floor((sec % 1) * 1000);
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
-}
-
-// Download
-dlBtn.addEventListener('click', () => {
-  const content = activeTab === 'plain'
-    ? segments.map(s => s.text.trim()).join('\n')
-    : toSRT(segments);
-  const ext = activeTab === 'plain' ? 'txt' : 'srt';
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const base = (currentFile?.name || 'transcript').replace(/\.[^.]+$/, '');
-  a.download = `${base}.${ext}`;
-  a.click();
-  URL.revokeObjectURL(url);
 });
 </script>
 </body>
