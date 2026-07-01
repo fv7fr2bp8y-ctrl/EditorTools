@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whisper Транскрипция</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f0f13;
+    color: #e8e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 32px;
+    color: #fff;
+  }
+  h1 span { color: #7c7cff; }
+
+  .card {
+    background: #1a1a24;
+    border: 1px solid #2a2a38;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 20px;
+  }
+
+  /* Drop zone */
+  #drop {
+    border: 2px dashed #3a3a55;
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  #drop.over { border-color: #7c7cff; background: #1e1e30; }
+  #drop.has-file { border-color: #4caf7d; border-style: solid; }
+  #drop input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  #drop-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  #drop-label { font-size: 1rem; color: #9090b0; }
+  #file-name { font-size: 0.9rem; color: #7c7cff; margin-top: 8px; font-weight: 500; }
+
+  /* Controls row */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto auto;
+    gap: 12px;
+    margin-top: 20px;
+    align-items: end;
+  }
+  label { font-size: 0.75rem; color: #6060a0; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 6px; }
+  select {
+    width: 100%;
+    background: #111118;
+    border: 1px solid #2a2a38;
+    color: #e8e8f0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+  select:focus { outline: none; border-color: #7c7cff; }
+
+  .checkbox-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+  .checkbox-wrap label { margin-bottom: 6px; }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 0;
+  }
+  .toggle input { display: none; }
+  .toggle-track {
+    width: 36px; height: 20px;
+    background: #2a2a38;
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: #7c7cff; }
+  .toggle-thumb {
+    position: absolute;
+    width: 14px; height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: left 0.2s;
+  }
+  .toggle input:checked ~ .toggle-track .toggle-thumb { left: 19px; }
+
+  #btn {
+    background: #7c7cff;
+    color: #fff;
+    border: none;
+    padding: 9px 22px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+    white-space: nowrap;
+    align-self: end;
+  }
+  #btn:hover { background: #6060e0; }
+  #btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Progress */
+  #progress-wrap { margin-top: 20px; display: none; }
+  .prog-bar-bg {
+    background: #111118;
+    border-radius: 6px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .prog-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7c7cff, #a07cff);
+    border-radius: 6px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  #prog-label {
+    font-size: 0.8rem;
+    color: #6060a0;
+    margin-top: 6px;
+  }
+
+  /* Info bar */
+  #info-bar {
+    display: none;
+    font-size: 0.8rem;
+    color: #6060a0;
+    margin-top: 8px;
+    gap: 16px;
+  }
+  #info-bar span { color: #9090c0; }
+
+  /* Output */
+  .output-card { display: none; }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: #111118;
+    border-radius: 8px;
+    padding: 4px;
+    width: fit-content;
+  }
+  .tab {
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #6060a0;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+  }
+  .tab.active { background: #2a2a40; color: #e8e8f0; }
+
+  .output-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .dl-btn {
+    background: #1e1e30;
+    border: 1px solid #3a3a55;
+    color: #9090c0;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .dl-btn:hover { background: #2a2a40; color: #e8e8f0; }
+
+  #output-text {
+    background: #111118;
+    border: 1px solid #1e1e2e;
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    max-height: 420px;
+    overflow-y: auto;
+    color: #c8c8e0;
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+
+  /* Segment highlight on hover for SRT */
+  .srt-block { padding: 2px 0; }
+  .srt-ts { color: #4a4a6a; font-size: 0.78rem; }
+  .srt-num { color: #3a3a5a; }
+
+  #error-msg {
+    color: #ff6b6b;
+    font-size: 0.88rem;
+    margin-top: 12px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<h1>🎙 Whisper <span>Транскрипция</span></h1>
+
+<div class="card">
+  <div id="drop">
+    <input type="file" id="file-input" accept="audio/*,video/*">
+    <div id="drop-icon">🎵</div>
+    <div id="drop-label">Пусни аудио/видео файл тук<br><small style="font-size:0.78rem;color:#505070">MP4 · MXF · MOV · MP3 · WAV · M4A · AAC · FLAC</small></div>
+    <div id="file-name"></div>
+  </div>
+
+  <div class="controls">
+    <div>
+      <label>Модел</label>
+      <select id="model">
+        <option value="tiny">Tiny (бърз, по-малко точен)</option>
+        <option value="base">Base</option>
+        <option value="small" selected>Small (препоръчан)</option>
+        <option value="medium">Medium (по-бавен, по-точен)</option>
+        <option value="large-v2">Large v2 (най-точен)</option>
+        <option value="large-v3">Large v3</option>
+      </select>
+    </div>
+    <div>
+      <label>Език</label>
+      <select id="language">
+        <option value="">Автоматично</option>
+        <option value="bg" selected>Български (bg)</option>
+        <option value="en">English (en)</option>
+        <option value="de">Deutsch (de)</option>
+        <option value="fr">Français (fr)</option>
+        <option value="es">Español (es)</option>
+        <option value="it">Italiano (it)</option>
+        <option value="ru">Русский (ru)</option>
+        <option value="pt">Português (pt)</option>
+      </select>
+    </div>
+    <div class="checkbox-wrap">
+      <label>Word-level</label>
+      <label class="toggle">
+        <input type="checkbox" id="word-ts">
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span style="font-size:0.85rem;color:#7070a0">Думи</span>
+      </label>
+    </div>
+    <button id="btn" disabled>Транскрибирай</button>
+  </div>
+
+  <div id="error-msg"></div>
+
+  <div id="progress-wrap">
+    <div class="prog-bar-bg"><div class="prog-bar" id="prog-bar"></div></div>
+    <div id="prog-label">Стартиране...</div>
+  </div>
+  <div id="info-bar">
+    Език: <span id="info-lang">—</span> &nbsp;|&nbsp;
+    Точност: <span id="info-prob">—</span> &nbsp;|&nbsp;
+    Продължителност: <span id="info-dur">—</span>
+  </div>
+</div>
+
+<div class="card output-card" id="output-card">
+  <div class="output-actions">
+    <div class="tabs">
+      <div class="tab active" data-tab="plain">Текст</div>
+      <div class="tab" data-tab="srt">SRT</div>
+    </div>
+    <button class="dl-btn" id="dl-btn">⬇ Изтегли</button>
+  </div>
+  <div id="output-text"></div>
+</div>
+
+<script>
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file-input');
+const fileName = document.getElementById('file-name');
+const btn = document.getElementById('btn');
+const modelSel = document.getElementById('model');
+const langSel = document.getElementById('language');
+const wordTs = document.getElementById('word-ts');
+const progWrap = document.getElementById('progress-wrap');
+const progBar = document.getElementById('prog-bar');
+const progLabel = document.getElementById('prog-label');
+const infoBar = document.getElementById('info-bar');
+const outputCard = document.getElementById('output-card');
+const outputText = document.getElementById('output-text');
+const errorMsg = document.getElementById('error-msg');
+const dlBtn = document.getElementById('dl-btn');
+
+let currentFile = null;
+let segments = [];
+let activeTab = 'plain';
+let totalDuration = 0;
+
+// Drop zone
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) setFile(fileInput.files[0]);
+});
+
+function setFile(f) {
+  currentFile = f;
+  fileName.textContent = `📁 ${f.name}`;
+  drop.classList.add('has-file');
+  btn.disabled = false;
+  drop.querySelector('#drop-icon').textContent = '✅';
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    activeTab = t.dataset.tab;
+    renderOutput();
+  });
+});
+
+// Transcribe
+btn.addEventListener('click', async () => {
+  if (!currentFile) return;
+  segments = [];
+  totalDuration = 0;
+  errorMsg.style.display = 'none';
+  outputCard.style.display = 'none';
+  infoBar.style.display = 'none';
+  progWrap.style.display = 'block';
+  progBar.style.width = '0%';
+  progLabel.textContent = 'Качване...';
+  btn.disabled = true;
+
+  const fd = new FormData();
+  fd.append('file', currentFile);
+  fd.append('model', modelSel.value);
+  fd.append('language', langSel.value);
+  fd.append('word_timestamps', wordTs.checked ? 'true' : 'false');
+
+  const res = await fetch('/transcribe', { method: 'POST', body: fd });
+  const { job_id } = await res.json();
+  progLabel.textContent = 'Зареждане на модел...';
+
+  const es = new EventSource(`/stream/${job_id}`);
+  es.onmessage = e => {
+    const msg = JSON.parse(e.data);
+
+    if (msg.segment) {
+      segments.push(msg.segment);
+      if (totalDuration > 0) {
+        const pct = Math.min(99, (msg.segment.end / totalDuration) * 100);
+        progBar.style.width = pct + '%';
+      } else {
+        // Pulse animation until we know duration
+        progBar.style.width = '5%';
+      }
+      const mm = Math.floor(msg.segment.end / 60);
+      const ss = Math.floor(msg.segment.end % 60);
+      progLabel.textContent = `Транскрибирам... ${mm}:${ss.toString().padStart(2,'0')}`;
+    }
+
+    if (msg.done) {
+      es.close();
+      progBar.style.width = '100%';
+      progLabel.textContent = msg.error ? `Грешка: ${msg.error}` : 'Готово ✓';
+
+      if (msg.info && msg.info.duration) {
+        totalDuration = msg.info.duration;
+        document.getElementById('info-lang').textContent = msg.info.language || '—';
+        document.getElementById('info-prob').textContent =
+          msg.info.language_probability ? (msg.info.language_probability * 100).toFixed(1) + '%' : '—';
+        const d = msg.info.duration;
+        document.getElementById('info-dur').textContent =
+          `${Math.floor(d/60)}:${Math.floor(d%60).toString().padStart(2,'0')}`;
+        infoBar.style.display = 'flex';
+      }
+
+      if (msg.error) {
+        errorMsg.textContent = '❌ ' + msg.error;
+        errorMsg.style.display = 'block';
+      } else if (segments.length > 0) {
+        outputCard.style.display = 'block';
+        renderOutput();
+      }
+
+      btn.disabled = false;
+    }
+  };
+
+  es.onerror = () => {
+    es.close();
+    progLabel.textContent = 'Грешка при връзката';
+    btn.disabled = false;
+  };
+});
+
+// Render
+function renderOutput() {
+  if (activeTab === 'plain') {
+    outputText.textContent = segments.map(s => s.text.trim()).join('\n');
+  } else {
+    outputText.textContent = toSRT(segments);
+  }
+}
+
+function toSRT(segs) {
+  return segs.map((s, i) => {
+    return `${i+1}\n${fmtSRT(s.start)} --> ${fmtSRT(s.end)}\n${s.text.trim()}\n`;
+  }).join('\n');
+}
+
+function fmtSRT(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  const ms = Math.floor((sec % 1) * 1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+}
+
+// Download
+dlBtn.addEventListener('click', () => {
+  const content = activeTab === 'plain'
+    ? segments.map(s => s.text.trim()).join('\n')
+    : toSRT(segments);
+  const ext = activeTab === 'plain' ? 'txt' : 'srt';
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const base = (currentFile?.name || 'transcript').replace(/\.[^.]+$/, '');
+  a.download = `${base}.${ext}`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
