@@ -492,7 +492,8 @@
       Свободен текст (Text-to-Speech)
     </div>
     <textarea id="free-text" placeholder="Напиши или постави текст тук, за да го чуеш на глас..."></textarea>
-    <div style="display:flex; justify-content:flex-end;">
+    <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px;">
+      <select class="select-dd" id="voice-select" style="width:auto; min-width:150px;"></select>
       <button class="toolbar-btn" id="free-tts-btn">Прочети текста</button>
     </div>
     <div id="free-tts-error" style="color:var(--et-error); font-size:0.85rem; display:none;"></div>
@@ -794,9 +795,33 @@ let readAllActive = false;
 let readAllIndex = 0;
 const readAllBtn = document.getElementById('read-all-btn');
 
+const VOICES = [
+  { id: 'Schedar', label: 'Schedar (М, спокоен)' },
+  { id: 'Algenib', label: 'Algenib (М)' },
+  { id: 'Charon', label: 'Charon (М)' },
+  { id: 'Iapetus', label: 'Iapetus (М)' },
+  { id: 'Sadaltager', label: 'Sadaltager (М)' },
+  { id: 'Aoede', label: 'Aoede (Ж)' },
+  { id: 'Kore', label: 'Kore (Ж)' },
+  { id: 'Leda', label: 'Leda (Ж)' },
+  { id: 'Vindemiatrix', label: 'Vindemiatrix (Ж)' },
+  { id: 'Despina', label: 'Despina (Ж)' },
+];
+let selectedVoice = 'Schedar';
+const voiceSelect = document.getElementById('voice-select');
+VOICES.forEach(v => {
+  const opt = document.createElement('option');
+  opt.value = v.id;
+  opt.textContent = v.label;
+  if (v.id === selectedVoice) opt.selected = true;
+  voiceSelect.appendChild(opt);
+});
+voiceSelect.addEventListener('change', () => { selectedVoice = voiceSelect.value; });
+
 async function fetchTTS(text) {
   const fd = new FormData();
   fd.append('text', text);
+  fd.append('voice', selectedVoice);
   const res = await fetch('/tts', { method: 'POST', body: fd });
   if (!res.ok) throw new Error('tts failed');
   const blob = await res.blob();

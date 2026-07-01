@@ -17,6 +17,10 @@ app = FastAPI()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TTS_MODEL = "gemini-2.5-flash-preview-tts"
 TTS_VOICE = "Schedar"
+TTS_VOICES = {
+    "Schedar", "Algenib", "Charon", "Iapetus", "Sadaltager",
+    "Aoede", "Kore", "Leda", "Vindemiatrix", "Despina",
+}
 tts_cache: dict[str, bytes] = {}
 
 MODELS = ["tiny", "base", "small", "medium", "large-v2", "large-v3"]
@@ -174,7 +178,7 @@ def pcm_to_wav(pcm: bytes, rate: int) -> bytes:
     return header + pcm
 
 
-async def gemini_tts_once(text: str) -> tuple[bytes, int] | None:
+async def gemini_tts_once(text: str, voice: str) -> tuple[bytes, int] | None:
     import httpx
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{TTS_MODEL}:generateContent?key={GEMINI_API_KEY}"
@@ -182,7 +186,7 @@ async def gemini_tts_once(text: str) -> tuple[bytes, int] | None:
         "contents": [{"parts": [{"text": text}]}],
         "generationConfig": {
             "responseModalities": ["AUDIO"],
-            "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": TTS_VOICE}}},
+            "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}},
         },
     }
     async with httpx.AsyncClient(timeout=30) as client:
@@ -201,26 +205,29 @@ async def gemini_tts_once(text: str) -> tuple[bytes, int] | None:
 
 
 @app.post("/tts")
-async def tts(text: str = Form(...)):
+async def tts(text: str = Form(...), voice: str = Form(TTS_VOICE)):
     if not GEMINI_API_KEY:
         raise HTTPException(500, "GEMINI_API_KEY не е конфигуриран на сървъра")
 
     text = text.strip()
     if not text:
         raise HTTPException(400, "Празен текст")
+    if voice not in TTS_VOICES:
+        voice = TTS_VOICE
 
-    if text in tts_cache:
-        return Response(content=tts_cache[text], media_type="audio/wav")
+    cache_key = f"{voice}:{text}"
+    if cache_key in tts_cache:
+        return Response(content=tts_cache[cache_key], media_type="audio/wav")
 
-    result = await gemini_tts_once(text)
+    result = await gemini_tts_once(text, voice)
     if not result:
-        result = await gemini_tts_once(text)  # един повторен опит
+        result = await gemini_tts_once(text, voice)  # един повторен опит
     if not result:
         raise HTTPException(502, "Gemini TTS не върна аудио")
 
     pcm, rate = result
     wav = pcm_to_wav(pcm, rate)
-    tts_cache[text] = wav
+    tts_cache[cache_key] = wav
     return Response(content=wav, media_type="audio/wav")
 
 
