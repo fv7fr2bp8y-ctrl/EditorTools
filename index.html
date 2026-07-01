@@ -346,6 +346,15 @@
 </div>
 
 <div class="card">
+  <label style="margin-bottom:10px;">🔊 Свободен текст (Text-to-Speech)</label>
+  <textarea id="free-text" placeholder="Напиши или постави текст тук, за да го чуеш на глас..." style="width:100%; min-height:100px; background:#111118; border:1px solid #2a2a38; color:#e8e8f0; border-radius:10px; padding:12px; font-size:0.92rem; font-family:inherit; resize:vertical;"></textarea>
+  <div style="display:flex; justify-content:flex-end; margin-top:10px; gap:8px;">
+    <button id="free-tts-btn" class="read-all-btn">🔊 Прочети текста</button>
+  </div>
+  <div id="free-tts-error" style="color:#ff6b6b; font-size:0.85rem; margin-top:8px; display:none;"></div>
+</div>
+
+<div class="card">
   <div id="drop">
     <input type="file" id="file-input" accept="audio/*,video/*">
     <div id="drop-icon">🎵</div>
@@ -486,6 +495,47 @@ async function playSegment(idx, btnEl, onEnded) {
     setTimeout(() => { btnEl.textContent = '🔊'; }, 1500);
   }
 }
+
+// --- Free-text TTS ---
+const freeText = document.getElementById('free-text');
+const freeTtsBtn = document.getElementById('free-tts-btn');
+const freeTtsError = document.getElementById('free-tts-error');
+
+freeTtsBtn.addEventListener('click', async () => {
+  const text = freeText.value.trim();
+  freeTtsError.style.display = 'none';
+  if (!text) return;
+
+  if (freeTtsBtn.classList.contains('active')) {
+    stopAudio();
+    freeTtsBtn.classList.remove('active');
+    freeTtsBtn.textContent = '🔊 Прочети текста';
+    return;
+  }
+
+  stopAudio();
+  freeTtsBtn.disabled = true;
+  freeTtsBtn.textContent = '… Зареждам';
+  try {
+    const url = await fetchTTS(text);
+    freeTtsBtn.disabled = false;
+    freeTtsBtn.classList.add('active');
+    freeTtsBtn.textContent = '⏸ Спри';
+    const audio = new Audio(url);
+    currentAudio = audio;
+    audio.onended = () => {
+      freeTtsBtn.classList.remove('active');
+      freeTtsBtn.textContent = '🔊 Прочети текста';
+    };
+    await audio.play();
+  } catch (e) {
+    freeTtsBtn.disabled = false;
+    freeTtsBtn.classList.remove('active');
+    freeTtsBtn.textContent = '🔊 Прочети текста';
+    freeTtsError.textContent = '❌ Грешка при генериране на глас. Провери дали TTS услугата е конфигурирана.';
+    freeTtsError.style.display = 'block';
+  }
+});
 
 readAllBtn.addEventListener('click', () => {
   if (readAllActive) {
