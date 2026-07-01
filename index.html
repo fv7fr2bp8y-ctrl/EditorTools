@@ -719,6 +719,17 @@ btn.addEventListener('click', async () => {
   fd.append('word_timestamps', wordTsOn ? 'true' : 'false');
 
   const res = await fetch('/transcribe', { method: 'POST', body: fd });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    skeletonWrap.classList.remove('show');
+    emptyState.style.display = 'flex';
+    progressWrap.classList.remove('show');
+    errorMsg.textContent = '❌ ' + (errData.detail || 'Грешка при заявката.');
+    errorMsg.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Транскрибирай';
+    return;
+  }
   const { job_id } = await res.json();
   progLabel.textContent = 'Зареждане на модел...';
 
@@ -823,7 +834,10 @@ async function fetchTTS(text) {
   fd.append('text', text);
   fd.append('voice', selectedVoice);
   const res = await fetch('/tts', { method: 'POST', body: fd });
-  if (!res.ok) throw new Error('tts failed');
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || 'tts failed');
+  }
   const blob = await res.blob();
   return URL.createObjectURL(blob);
 }
@@ -910,7 +924,7 @@ freeTtsBtn.addEventListener('click', async () => {
     freeTtsBtn.disabled = false;
     freeTtsBtn.classList.remove('on');
     freeTtsBtn.textContent = 'Прочети текста';
-    freeTtsError.textContent = '❌ Грешка при генериране на глас.';
+    freeTtsError.textContent = '❌ ' + (e.message || 'Грешка при генериране на глас.');
     freeTtsError.style.display = 'block';
   }
 });

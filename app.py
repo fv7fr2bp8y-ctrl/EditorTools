@@ -6,13 +6,60 @@ import asyncio
 import tempfile
 import threading
 import re
+from datetime import date
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 app = FastAPI()
+
+DAILY_TRANSCRIBE_LIMIT = 5
+DAILY_TTS_LIMIT = 10
+QUOTA_FILE = Path(__file__).parent / "quota.json"
+quota_lock = threading.Lock()
+
+
+def get_client_ip(request: Request) -> str:
+    fwd = request.headers.get("x-forwarded-for")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def load_quota() -> dict:
+    if QUOTA_FILE.exists():
+        try:
+            return json.loads(QUOTA_FILE.read_text())
+        except Exception:
+            return {}
+    return {}
+
+
+def save_quota(data: dict):
+    try:
+        QUOTA_FILE.write_text(json.dumps(data))
+    except Exception:
+        pass
+
+
+def check_and_increment(ip: str, kind: str, limit: int):
+    today = date.today().isoformat()
+    with quota_lock:
+        data = load_quota()
+        entry = data.get(ip)
+        if not entry or entry.get("date") != today:
+            entry = {"date": today, "transcribe": 0, "tts": 0}
+        used = entry.get(kind, 0)
+        if used >= limit:
+            raise HTTPException(
+                429,
+                f"Дневният лимит от {limit} заявки е достигнат за днес. Опитай пак утре.",
+            )
+        entry[kind] = used + 1
+        data[ip] = entry
+        save_quota(data)
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TTS_MODEL = "gemini-2.5-flash-preview-tts"
@@ -105,12 +152,15 @@ MAX_FILE_MB = 500
 
 @app.post("/transcribe")
 async def transcribe(
+    request: Request,
     file: UploadFile = File(...),
     model: str = Form("small"),
     language: str = Form(""),
     word_timestamps: str = Form("false"),
 ):
     import uuid
+
+    check_and_increment(get_client_ip(request), "transcribe", DAILY_TRANSCRIBE_LIMIT)
 
     job_id = uuid.uuid4().hex
     suffix = Path(file.filename or "audio").suffix or ".tmp"
@@ -205,7 +255,7 @@ async def gemini_tts_once(text: str, voice: str) -> tuple[bytes, int] | None:
 
 
 @app.post("/tts")
-async def tts(text: str = Form(...), voice: str = Form(TTS_VOICE)):
+async def tts(request: Request, text: str = Form(...), voice: str = Form(TTS_VOICE)):
     if not GEMINI_API_KEY:
         raise HTTPException(500, "GEMINI_API_KEY не е конфигуриран на сървъра")
 
@@ -218,6 +268,8 @@ async def tts(text: str = Form(...), voice: str = Form(TTS_VOICE)):
     cache_key = f"{voice}:{text}"
     if cache_key in tts_cache:
         return Response(content=tts_cache[cache_key], media_type="audio/wav")
+
+    check_and_increment(get_client_ip(request), "tts", DAILY_TTS_LIMIT)
 
     result = await gemini_tts_once(text, voice)
     if not result:
