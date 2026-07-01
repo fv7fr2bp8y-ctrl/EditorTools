@@ -2,3 +2,5 @@ fastapi==0.138.1
 uvicorn==0.49.0
 python-multipart==0.0.32
 faster-whisper==1.1.1
+requests
+huggingface-hub
