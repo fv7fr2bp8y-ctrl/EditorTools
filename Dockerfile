@@ -11,7 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Предзаредете модела при build (за да не чака потребителят при стартиране)
 RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8')"
 
-COPY app.py index.html ./
+COPY app.py index.html manifest.json ./
+COPY icons ./icons
 
 EXPOSE 7979
 CMD ["python", "app.py"]
