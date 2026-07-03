@@ -342,10 +342,17 @@
       </div>
       <div class="brand-text">
         <span class="brand-title">Editor<span>Tools</span></span>
-        <span class="brand-sub">Аудио и видео в текст</span>
+        <span class="brand-sub" id="brand-sub">Аудио и видео в текст</span>
       </div>
     </div>
     <div class="topbar-actions">
+      <select class="select-dd" id="ui-lang-select" style="width:auto; min-width:100px; padding:9px 30px 9px 13px;">
+        <option value="bg">Български</option>
+        <option value="en">English</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
       <button class="icon-btn" id="theme-toggle" title="Смени темата">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
@@ -353,7 +360,7 @@
       </button>
       <button class="ghost-btn" id="scroll-tts-btn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-        Text-to-Speech
+        <span id="scroll-tts-label">Text-to-Speech</span>
       </button>
       <a class="coffee-btn" href="https://buymeacoffee.com/spasspasov" target="_blank" rel="noopener">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path><line x1="6" y1="1.5" x2="6" y2="4"></line><line x1="10" y1="1.5" x2="10" y2="4"></line><line x1="14" y1="1.5" x2="14" y2="4"></line></svg>
@@ -373,8 +380,8 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m8 7 4-4 4 4"></path><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"></path></svg>
           </div>
           <div style="display:flex; flex-direction:column; gap:4px;">
-            <span class="dz-title">Пусни аудио/видео файл тук</span>
-            <span class="dz-sub">или <span>избери от устройството</span></span>
+            <span class="dz-title" id="dz-title">Пусни аудио/видео файл тук</span>
+            <span class="dz-sub"><span id="dz-or">или</span> <span id="dz-choose">избери от устройството</span></span>
           </div>
           <div class="dz-chips">
             <span class="dz-chip">MP4</span><span class="dz-chip">MXF</span><span class="dz-chip">MOV</span>
@@ -403,19 +410,19 @@
         </div>
 
         <div class="field">
-          <span class="field-label">Модел</span>
+          <span class="field-label" id="label-model">Модел</span>
           <select class="select-dd" id="model-select"></select>
         </div>
 
         <div class="field">
-          <span class="field-label">Език</span>
+          <span class="field-label" id="label-lang">Език</span>
           <select class="select-dd" id="lang-select"></select>
         </div>
 
         <div class="toggle-row" id="word-toggle-row">
           <div>
-            <div class="toggle-title">Word-level времена</div>
-            <div class="toggle-note">Времеви маркер за всяка дума</div>
+            <div class="toggle-title" id="toggle-title">Word-level времена</div>
+            <div class="toggle-note" id="toggle-note">Времеви маркер за всяка дума</div>
           </div>
           <div class="switch-track" id="word-switch"><div class="switch-knob"></div></div>
         </div>
@@ -434,8 +441,8 @@
             <div style="height:16px"></div><div style="height:28px"></div><div style="height:20px"></div>
           </div>
           <div style="display:flex; flex-direction:column; gap:5px; max-width:320px;">
-            <span class="empty-title">Тук ще се появи транскрипцията</span>
-            <span class="empty-sub">Качи файл и натисни „Транскрибирай". Резултатът се появява като текст и SRT субтитри.</span>
+            <span class="empty-title" id="empty-title">Тук ще се появи транскрипцията</span>
+            <span class="empty-sub" id="empty-sub">Качи файл и натисни „Транскрибирай". Резултатът се появява като текст и SRT субтитри.</span>
           </div>
         </div>
 
@@ -445,7 +452,7 @@
               <div style="animation-delay:0s"></div><div style="animation-delay:0.15s"></div>
               <div style="animation-delay:0.3s"></div><div style="animation-delay:0.45s"></div>
             </div>
-            Транскрипцията се ражда…
+            <span id="skeleton-status-text">Транскрипцията се ражда…</span>
           </div>
           <div class="skel-row" style="width:92%"></div>
           <div class="skel-row" style="width:78%"></div>
@@ -463,23 +470,23 @@
             <div class="toolbar-actions">
               <button class="toolbar-btn" id="read-all-btn">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                Прочети всичко
+                <span id="read-all-label">Прочети всичко</span>
               </button>
               <button class="icon-only-btn" id="copy-btn" title="Копирай">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               </button>
               <button class="invert-btn" id="dl-btn">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>
-                Изтегли
+                <span id="dl-label">Изтегли</span>
               </button>
             </div>
           </div>
 
           <div class="stats-strip">
-            <div class="stat"><span class="stat-label">Език</span><span class="stat-val" id="info-lang">—</span></div>
-            <div class="stat"><span class="stat-label">Точност</span><span class="stat-val green" id="info-prob">—</span></div>
-            <div class="stat"><span class="stat-label">Продължителност</span><span class="stat-val" id="info-dur">—</span></div>
-            <div class="stat"><span class="stat-label">Сегменти</span><span class="stat-val" id="info-count">—</span></div>
+            <div class="stat"><span class="stat-label" id="stat-label-lang">Език</span><span class="stat-val" id="info-lang">—</span></div>
+            <div class="stat"><span class="stat-label" id="stat-label-prob">Точност</span><span class="stat-val green" id="info-prob">—</span></div>
+            <div class="stat"><span class="stat-label" id="stat-label-dur">Продължителност</span><span class="stat-val" id="info-dur">—</span></div>
+            <div class="stat"><span class="stat-label" id="stat-label-count">Сегменти</span><span class="stat-val" id="info-count">—</span></div>
           </div>
 
           <div class="tab-content" id="segment-list-wrap"><div id="segment-list"></div></div>
@@ -493,7 +500,7 @@
   <div class="free-tts-card" id="free-tts-anchor">
     <div class="free-tts-title">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-      Свободен текст (Text-to-Speech)
+      <span id="free-tts-title-text">Свободен текст (Text-to-Speech)</span>
     </div>
     <textarea id="free-text" placeholder="Напиши или постави текст тук, за да го чуеш на глас..."></textarea>
     <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px;">
@@ -504,12 +511,335 @@
   </div>
 
   <footer class="site-footer">
-    <p>EditorTools помага да превърнеш аудио и видео в текст бързо и лесно — с транскрипция и генериране на глас на едно място.</p>
-    <p class="footer-meta">© 2026 EditorTools. Всички права запазени. · <a href="mailto:fps60@yahoo.com">fps60@yahoo.com</a></p>
+    <p id="footer-desc">EditorTools помага да превърнеш аудио и видео в текст бързо и лесно — с транскрипция и генериране на глас на едно място.</p>
+    <p class="footer-meta">© 2026 EditorTools. <span id="footer-rights">Всички права запазени.</span> · <a href="mailto:fps60@yahoo.com">fps60@yahoo.com</a></p>
   </footer>
 </div>
 
 <script>
+/* ---------- I18N ---------- */
+const I18N = {
+  bg: {
+    brandSub: 'Аудио и видео в текст',
+    themeToggleTitle: 'Смени темата',
+    ttsNavLabel: 'Text-to-Speech',
+    dzTitle: 'Пусни аудио/видео файл тук',
+    dzOr: 'или',
+    dzChoose: 'избери от устройството',
+    fileRemoveTitle: 'Премахни',
+    labelModel: 'Модел',
+    labelLang: 'Език',
+    toggleTitle: 'Word-level времена',
+    toggleNote: 'Времеви маркер за всяка дума',
+    btnTranscribe: 'Транскрибирай',
+    btnProcessing: 'Обработка…',
+    btnTranscribeAgain: 'Транскрибирай отново',
+    emptyTitle: 'Тук ще се появи транскрипцията',
+    emptySub: 'Качи файл и натисни „Транскрибирай". Резултатът се появява като текст и SRT субтитри.',
+    skeletonStatus: 'Транскрипцията се ражда…',
+    tabText: 'Текст',
+    readAll: 'Прочети всичко',
+    readAllStop: 'Спри',
+    copyTitle: 'Копирай',
+    downloadLabel: 'Изтегли',
+    statLang: 'Език',
+    statProb: 'Точност',
+    statDur: 'Продължителност',
+    statCount: 'Сегменти',
+    freeTtsTitle: 'Свободен текст (Text-to-Speech)',
+    freeTextPlaceholder: 'Напиши или постави текст тук, за да го чуеш на глас...',
+    freeTtsBtn: 'Прочети текста',
+    freeTtsBtnStop: 'Спри',
+    freeTtsBtnLoading: 'Зареждам…',
+    footerDesc: 'EditorTools помага да превърнеш аудио и видео в текст бързо и лесно — с транскрипция и генериране на глас на едно място.',
+    footerRights: 'Всички права запазени.',
+    listenTitle: 'Чуй',
+    progUploading: 'Качване...',
+    progLoadingModel: 'Зареждане на модел...',
+    progTranscribing: 'Транскрибирам...',
+    progDone: 'Готово',
+    progError: 'Грешка',
+    progConnError: 'Грешка при връзката',
+    errRequestFailed: 'Грешка при заявката.',
+    errTtsFailed: 'Грешка при генериране на глас.',
+    langAuto: 'Автоматично',
+    modelNoteTiny: 'най-бърз, по-малко точен', modelTagTiny: 'бърз',
+    modelNoteBase: 'базов вариант', modelTagBase: 'база',
+    modelNoteSmall: 'препоръчан баланс', modelTagSmall: 'баланс',
+    modelNoteMedium: 'по-бавен, по-точен', modelTagMedium: 'точен',
+    modelNoteLargeV2: 'най-точен', modelTagLargeV2: 'макс',
+    modelNoteLargeV3: 'най-нов, най-точен', modelTagLargeV3: 'макс',
+    voiceMale: 'М', voiceFemale: 'Ж', voiceCalm: 'спокоен',
+  },
+  en: {
+    brandSub: 'Audio and video to text',
+    themeToggleTitle: 'Toggle theme',
+    ttsNavLabel: 'Text-to-Speech',
+    dzTitle: 'Drop an audio/video file here',
+    dzOr: 'or',
+    dzChoose: 'choose from device',
+    fileRemoveTitle: 'Remove',
+    labelModel: 'Model',
+    labelLang: 'Language',
+    toggleTitle: 'Word-level timestamps',
+    toggleNote: 'Timestamp for every word',
+    btnTranscribe: 'Transcribe',
+    btnProcessing: 'Processing…',
+    btnTranscribeAgain: 'Transcribe again',
+    emptyTitle: 'Your transcript will appear here',
+    emptySub: 'Upload a file and press "Transcribe". The result appears as editable text and SRT subtitles.',
+    skeletonStatus: 'Transcribing…',
+    tabText: 'Text',
+    readAll: 'Read all',
+    readAllStop: 'Stop',
+    copyTitle: 'Copy',
+    downloadLabel: 'Download',
+    statLang: 'Language',
+    statProb: 'Confidence',
+    statDur: 'Duration',
+    statCount: 'Segments',
+    freeTtsTitle: 'Free text (Text-to-Speech)',
+    freeTextPlaceholder: 'Type or paste text here to hear it out loud...',
+    freeTtsBtn: 'Read text',
+    freeTtsBtnStop: 'Stop',
+    freeTtsBtnLoading: 'Loading…',
+    footerDesc: 'EditorTools helps you turn audio and video into text quickly and easily — with transcription and voice generation in one place.',
+    footerRights: 'All rights reserved.',
+    listenTitle: 'Listen',
+    progUploading: 'Uploading...',
+    progLoadingModel: 'Loading model...',
+    progTranscribing: 'Transcribing...',
+    progDone: 'Done',
+    progError: 'Error',
+    progConnError: 'Connection error',
+    errRequestFailed: 'Request error.',
+    errTtsFailed: 'Error generating voice.',
+    langAuto: 'Automatic',
+    modelNoteTiny: 'fastest, less accurate', modelTagTiny: 'fast',
+    modelNoteBase: 'basic option', modelTagBase: 'base',
+    modelNoteSmall: 'recommended balance', modelTagSmall: 'balanced',
+    modelNoteMedium: 'slower, more accurate', modelTagMedium: 'accurate',
+    modelNoteLargeV2: 'most accurate', modelTagLargeV2: 'max',
+    modelNoteLargeV3: 'newest, most accurate', modelTagLargeV3: 'max',
+    voiceMale: 'M', voiceFemale: 'F', voiceCalm: 'calm',
+  },
+  de: {
+    brandSub: 'Audio und Video in Text',
+    themeToggleTitle: 'Design wechseln',
+    ttsNavLabel: 'Text-to-Speech',
+    dzTitle: 'Audio-/Videodatei hier ablegen',
+    dzOr: 'oder',
+    dzChoose: 'vom Gerät auswählen',
+    fileRemoveTitle: 'Entfernen',
+    labelModel: 'Modell',
+    labelLang: 'Sprache',
+    toggleTitle: 'Zeitstempel pro Wort',
+    toggleNote: 'Zeitmarke für jedes Wort',
+    btnTranscribe: 'Transkribieren',
+    btnProcessing: 'Verarbeitung…',
+    btnTranscribeAgain: 'Erneut transkribieren',
+    emptyTitle: 'Hier erscheint die Transkription',
+    emptySub: 'Lade eine Datei hoch und klicke auf „Transkribieren". Das Ergebnis erscheint als Text und SRT-Untertitel.',
+    skeletonStatus: 'Transkription läuft…',
+    tabText: 'Text',
+    readAll: 'Alles vorlesen',
+    readAllStop: 'Stopp',
+    copyTitle: 'Kopieren',
+    downloadLabel: 'Herunterladen',
+    statLang: 'Sprache',
+    statProb: 'Genauigkeit',
+    statDur: 'Dauer',
+    statCount: 'Segmente',
+    freeTtsTitle: 'Freier Text (Text-to-Speech)',
+    freeTextPlaceholder: 'Text hier eingeben oder einfügen, um ihn vorlesen zu lassen...',
+    freeTtsBtn: 'Text vorlesen',
+    freeTtsBtnStop: 'Stopp',
+    freeTtsBtnLoading: 'Lädt…',
+    footerDesc: 'EditorTools hilft dir, Audio und Video schnell und einfach in Text zu verwandeln — mit Transkription und Sprachgenerierung an einem Ort.',
+    footerRights: 'Alle Rechte vorbehalten.',
+    listenTitle: 'Anhören',
+    progUploading: 'Wird hochgeladen...',
+    progLoadingModel: 'Modell wird geladen...',
+    progTranscribing: 'Transkribiere...',
+    progDone: 'Fertig',
+    progError: 'Fehler',
+    progConnError: 'Verbindungsfehler',
+    errRequestFailed: 'Anfragefehler.',
+    errTtsFailed: 'Fehler bei der Sprachgenerierung.',
+    langAuto: 'Automatisch',
+    modelNoteTiny: 'am schnellsten, weniger genau', modelTagTiny: 'schnell',
+    modelNoteBase: 'Basisoption', modelTagBase: 'basis',
+    modelNoteSmall: 'empfohlene Balance', modelTagSmall: 'balance',
+    modelNoteMedium: 'langsamer, genauer', modelTagMedium: 'genau',
+    modelNoteLargeV2: 'am genauesten', modelTagLargeV2: 'max',
+    modelNoteLargeV3: 'neuestes, am genauesten', modelTagLargeV3: 'max',
+    voiceMale: 'M', voiceFemale: 'W', voiceCalm: 'ruhig',
+  },
+  fr: {
+    brandSub: 'Audio et vidéo en texte',
+    themeToggleTitle: 'Changer de thème',
+    ttsNavLabel: 'Text-to-Speech',
+    dzTitle: 'Dépose un fichier audio/vidéo ici',
+    dzOr: 'ou',
+    dzChoose: 'choisir depuis l\'appareil',
+    fileRemoveTitle: 'Supprimer',
+    labelModel: 'Modèle',
+    labelLang: 'Langue',
+    toggleTitle: 'Horodatage par mot',
+    toggleNote: 'Horodatage pour chaque mot',
+    btnTranscribe: 'Transcrire',
+    btnProcessing: 'Traitement…',
+    btnTranscribeAgain: 'Transcrire à nouveau',
+    emptyTitle: 'La transcription apparaîtra ici',
+    emptySub: 'Téléverse un fichier et clique sur « Transcrire ». Le résultat apparaît en texte et sous-titres SRT.',
+    skeletonStatus: 'Transcription en cours…',
+    tabText: 'Texte',
+    readAll: 'Tout lire',
+    readAllStop: 'Arrêter',
+    copyTitle: 'Copier',
+    downloadLabel: 'Télécharger',
+    statLang: 'Langue',
+    statProb: 'Précision',
+    statDur: 'Durée',
+    statCount: 'Segments',
+    freeTtsTitle: 'Texte libre (Text-to-Speech)',
+    freeTextPlaceholder: 'Écris ou colle du texte ici pour l\'entendre à voix haute...',
+    freeTtsBtn: 'Lire le texte',
+    freeTtsBtnStop: 'Arrêter',
+    freeTtsBtnLoading: 'Chargement…',
+    footerDesc: 'EditorTools t\'aide à transformer audio et vidéo en texte rapidement et facilement — transcription et génération vocale au même endroit.',
+    footerRights: 'Tous droits réservés.',
+    listenTitle: 'Écouter',
+    progUploading: 'Téléversement...',
+    progLoadingModel: 'Chargement du modèle...',
+    progTranscribing: 'Transcription en cours...',
+    progDone: 'Terminé',
+    progError: 'Erreur',
+    progConnError: 'Erreur de connexion',
+    errRequestFailed: 'Erreur de la requête.',
+    errTtsFailed: 'Erreur lors de la génération vocale.',
+    langAuto: 'Automatique',
+    modelNoteTiny: 'le plus rapide, moins précis', modelTagTiny: 'rapide',
+    modelNoteBase: 'option de base', modelTagBase: 'base',
+    modelNoteSmall: 'équilibre recommandé', modelTagSmall: 'équilibré',
+    modelNoteMedium: 'plus lent, plus précis', modelTagMedium: 'précis',
+    modelNoteLargeV2: 'le plus précis', modelTagLargeV2: 'max',
+    modelNoteLargeV3: 'le plus récent, le plus précis', modelTagLargeV3: 'max',
+    voiceMale: 'H', voiceFemale: 'F', voiceCalm: 'calme',
+  },
+  es: {
+    brandSub: 'Audio y vídeo a texto',
+    themeToggleTitle: 'Cambiar tema',
+    ttsNavLabel: 'Text-to-Speech',
+    dzTitle: 'Suelta un archivo de audio/vídeo aquí',
+    dzOr: 'o',
+    dzChoose: 'elige desde el dispositivo',
+    fileRemoveTitle: 'Quitar',
+    labelModel: 'Modelo',
+    labelLang: 'Idioma',
+    toggleTitle: 'Marcas de tiempo por palabra',
+    toggleNote: 'Marca de tiempo para cada palabra',
+    btnTranscribe: 'Transcribir',
+    btnProcessing: 'Procesando…',
+    btnTranscribeAgain: 'Transcribir de nuevo',
+    emptyTitle: 'Aquí aparecerá la transcripción',
+    emptySub: 'Sube un archivo y pulsa "Transcribir". El resultado aparece como texto y subtítulos SRT.',
+    skeletonStatus: 'Transcribiendo…',
+    tabText: 'Texto',
+    readAll: 'Leer todo',
+    readAllStop: 'Detener',
+    copyTitle: 'Copiar',
+    downloadLabel: 'Descargar',
+    statLang: 'Idioma',
+    statProb: 'Precisión',
+    statDur: 'Duración',
+    statCount: 'Segmentos',
+    freeTtsTitle: 'Texto libre (Text-to-Speech)',
+    freeTextPlaceholder: 'Escribe o pega texto aquí para escucharlo en voz alta...',
+    freeTtsBtn: 'Leer el texto',
+    freeTtsBtnStop: 'Detener',
+    freeTtsBtnLoading: 'Cargando…',
+    footerDesc: 'EditorTools te ayuda a convertir audio y vídeo en texto de forma rápida y sencilla — con transcripción y generación de voz en un solo lugar.',
+    footerRights: 'Todos los derechos reservados.',
+    listenTitle: 'Escuchar',
+    progUploading: 'Subiendo...',
+    progLoadingModel: 'Cargando modelo...',
+    progTranscribing: 'Transcribiendo...',
+    progDone: 'Listo',
+    progError: 'Error',
+    progConnError: 'Error de conexión',
+    errRequestFailed: 'Error en la solicitud.',
+    errTtsFailed: 'Error al generar la voz.',
+    langAuto: 'Automático',
+    modelNoteTiny: 'más rápido, menos preciso', modelTagTiny: 'rápido',
+    modelNoteBase: 'opción básica', modelTagBase: 'básico',
+    modelNoteSmall: 'equilibrio recomendado', modelTagSmall: 'equilibrado',
+    modelNoteMedium: 'más lento, más preciso', modelTagMedium: 'preciso',
+    modelNoteLargeV2: 'el más preciso', modelTagLargeV2: 'máx',
+    modelNoteLargeV3: 'más nuevo, el más preciso', modelTagLargeV3: 'máx',
+    voiceMale: 'M', voiceFemale: 'F', voiceCalm: 'calmado',
+  },
+};
+
+const UI_LANG_KEY = 'et-ui-lang';
+function detectDefaultUiLang() {
+  const saved = localStorage.getItem(UI_LANG_KEY);
+  if (saved && I18N[saved]) return saved;
+  const nav = (navigator.language || 'bg').slice(0, 2).toLowerCase();
+  return I18N[nav] ? nav : 'bg';
+}
+let currentUiLang = detectDefaultUiLang();
+function t(key) {
+  return (I18N[currentUiLang] && I18N[currentUiLang][key]) || I18N.bg[key] || key;
+}
+
+function applyI18n() {
+  document.documentElement.lang = currentUiLang;
+  document.title = `EditorTools — ${t('brandSub')}`;
+  document.getElementById('brand-sub').textContent = t('brandSub');
+  const themeBtn = document.getElementById('theme-toggle');
+  themeBtn.title = t('themeToggleTitle');
+  document.getElementById('scroll-tts-label').textContent = t('ttsNavLabel');
+  document.getElementById('dz-title').textContent = t('dzTitle');
+  document.getElementById('dz-or').textContent = t('dzOr');
+  document.getElementById('dz-choose').textContent = t('dzChoose');
+  document.getElementById('file-remove-btn').title = t('fileRemoveTitle');
+  document.getElementById('label-model').textContent = t('labelModel');
+  document.getElementById('label-lang').textContent = t('labelLang');
+  document.getElementById('toggle-title').textContent = t('toggleTitle');
+  document.getElementById('toggle-note').textContent = t('toggleNote');
+  document.getElementById('empty-title').textContent = t('emptyTitle');
+  document.getElementById('empty-sub').textContent = t('emptySub');
+  document.getElementById('skeleton-status-text').textContent = t('skeletonStatus');
+  document.getElementById('tab-text-btn').textContent = t('tabText');
+  document.getElementById('read-all-label').textContent = readAllActive ? t('readAllStop') : t('readAll');
+  document.getElementById('copy-btn').title = t('copyTitle');
+  document.getElementById('dl-label').textContent = t('downloadLabel');
+  document.getElementById('stat-label-lang').textContent = t('statLang');
+  document.getElementById('stat-label-prob').textContent = t('statProb');
+  document.getElementById('stat-label-dur').textContent = t('statDur');
+  document.getElementById('stat-label-count').textContent = t('statCount');
+  document.getElementById('free-tts-title-text').textContent = t('freeTtsTitle');
+  document.getElementById('free-text').placeholder = t('freeTextPlaceholder');
+  document.getElementById('footer-desc').textContent = t('footerDesc');
+  document.getElementById('footer-rights').textContent = t('footerRights');
+  if (!btn.disabled || currentFile) btn.textContent = resultView.style.display === 'flex' ? t('btnTranscribeAgain') : t('btnTranscribe');
+  else btn.textContent = t('btnTranscribe');
+  const freeTtsBtnEl = document.getElementById('free-tts-btn');
+  if (!freeTtsBtnEl.classList.contains('on') && !freeTtsBtnEl.disabled) freeTtsBtnEl.textContent = t('freeTtsBtn');
+  rebuildModelOptions();
+  rebuildLangOptions();
+  rebuildVoiceOptions();
+}
+
+const uiLangSelect = document.getElementById('ui-lang-select');
+uiLangSelect.value = currentUiLang;
+uiLangSelect.addEventListener('change', () => {
+  currentUiLang = uiLangSelect.value;
+  localStorage.setItem(UI_LANG_KEY, currentUiLang);
+  applyI18n();
+});
+
 /* ---------- Theme ---------- */
 const THEME_KEY = 'et-theme';
 function applyTheme(t) {
@@ -534,15 +864,15 @@ document.getElementById('scroll-tts-btn').addEventListener('click', () => {
 
 /* ---------- Model / language pills ---------- */
 const MODELS = [
-  { id: 'tiny', name: 'Tiny', note: 'най-бърз, по-малко точен', tag: 'бърз' },
-  { id: 'base', name: 'Base', note: 'базов вариант', tag: 'база' },
-  { id: 'small', name: 'Small', note: 'препоръчан баланс', tag: 'баланс' },
-  { id: 'medium', name: 'Medium', note: 'по-бавен, по-точен', tag: 'точен' },
-  { id: 'large-v2', name: 'Large v2', note: 'най-точен', tag: 'макс' },
-  { id: 'large-v3', name: 'Large v3', note: 'най-нов, най-точен', tag: 'макс' },
+  { id: 'tiny', name: 'Tiny', noteKey: 'modelNoteTiny', tagKey: 'modelTagTiny' },
+  { id: 'base', name: 'Base', noteKey: 'modelNoteBase', tagKey: 'modelTagBase' },
+  { id: 'small', name: 'Small', noteKey: 'modelNoteSmall', tagKey: 'modelTagSmall' },
+  { id: 'medium', name: 'Medium', noteKey: 'modelNoteMedium', tagKey: 'modelTagMedium' },
+  { id: 'large-v2', name: 'Large v2', noteKey: 'modelNoteLargeV2', tagKey: 'modelTagLargeV2' },
+  { id: 'large-v3', name: 'Large v3', noteKey: 'modelNoteLargeV3', tagKey: 'modelTagLargeV3' },
 ];
 const LANGS = [
-  { id: '', label: 'Автоматично' },
+  { id: '', labelKey: 'langAuto' },
   { id: 'bg', label: 'Български' },
   { id: 'en', label: 'English' },
   { id: 'de', label: 'Deutsch' },
@@ -558,23 +888,29 @@ let selectedLang = 'bg';
 let wordTsOn = false;
 
 const modelSelect = document.getElementById('model-select');
-MODELS.forEach(m => {
-  const opt = document.createElement('option');
-  opt.value = m.id;
-  opt.textContent = `${m.name} — ${m.note}`;
-  if (m.id === selectedModel) opt.selected = true;
-  modelSelect.appendChild(opt);
-});
+function rebuildModelOptions() {
+  modelSelect.innerHTML = '';
+  MODELS.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = `${m.name} — ${t(m.noteKey)}`;
+    if (m.id === selectedModel) opt.selected = true;
+    modelSelect.appendChild(opt);
+  });
+}
 modelSelect.addEventListener('change', () => { selectedModel = modelSelect.value; });
 
 const langSelect = document.getElementById('lang-select');
-LANGS.forEach(l => {
-  const opt = document.createElement('option');
-  opt.value = l.id;
-  opt.textContent = l.label;
-  if (l.id === selectedLang) opt.selected = true;
-  langSelect.appendChild(opt);
-});
+function rebuildLangOptions() {
+  langSelect.innerHTML = '';
+  LANGS.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l.id;
+    opt.textContent = l.labelKey ? t(l.labelKey) : l.label;
+    if (l.id === selectedLang) opt.selected = true;
+    langSelect.appendChild(opt);
+  });
+}
 langSelect.addEventListener('change', () => { selectedLang = langSelect.value; });
 
 const wordSwitch = document.getElementById('word-switch');
@@ -663,7 +999,7 @@ function renderSegmentList() {
     const listenBtn = document.createElement('button');
     listenBtn.className = 'seg-listen';
     listenBtn.textContent = '▶';
-    listenBtn.title = 'Чуй';
+    listenBtn.title = t('listenTitle');
     listenBtn.addEventListener('click', () => {
       if (readAllActive) stopReadAll();
       if (listenBtn.classList.contains('playing')) { stopAudio(); return; }
@@ -712,9 +1048,9 @@ btn.addEventListener('click', async () => {
   skeletonWrap.classList.add('show');
   progressWrap.classList.add('show');
   progBar.style.width = '0%'; progPct.textContent = '0%';
-  progLabel.textContent = 'Качване...';
+  progLabel.textContent = t('progUploading');
   btn.disabled = true;
-  btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="spin"><path d="M21 12a9 9 0 1 1-6.22-8.56"></path></svg> Обработка…';
+  btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="spin"><path d="M21 12a9 9 0 1 1-6.22-8.56"></path></svg> ' + t('btnProcessing');
 
   const fd = new FormData();
   fd.append('file', currentFile);
@@ -728,14 +1064,14 @@ btn.addEventListener('click', async () => {
     skeletonWrap.classList.remove('show');
     emptyState.style.display = 'flex';
     progressWrap.classList.remove('show');
-    errorMsg.textContent = '❌ ' + (errData.detail || 'Грешка при заявката.');
+    errorMsg.textContent = '❌ ' + (errData.detail || t('errRequestFailed'));
     errorMsg.style.display = 'block';
     btn.disabled = false;
-    btn.textContent = 'Транскрибирай';
+    btn.textContent = t('btnTranscribe');
     return;
   }
   const { job_id } = await res.json();
-  progLabel.textContent = 'Зареждане на модел...';
+  progLabel.textContent = t('progLoadingModel');
 
   const es = new EventSource(`/stream/${job_id}`);
   es.onmessage = e => {
@@ -745,15 +1081,15 @@ btn.addEventListener('click', async () => {
       const pct = totalDuration > 0 ? Math.min(99, (msg.segment.end / totalDuration) * 100) : 5;
       progBar.style.width = pct + '%'; progPct.textContent = Math.round(pct) + '%';
       const mm = Math.floor(msg.segment.end / 60), ss = Math.floor(msg.segment.end % 60);
-      progLabel.textContent = `Транскрибирам... ${mm}:${ss.toString().padStart(2,'0')}`;
+      progLabel.textContent = `${t('progTranscribing')} ${mm}:${ss.toString().padStart(2,'0')}`;
     }
     if (msg.done) {
       es.close();
       progBar.style.width = '100%'; progPct.textContent = '100%';
-      progLabel.textContent = msg.error ? `Грешка: ${msg.error}` : 'Готово';
+      progLabel.textContent = msg.error ? `${t('progError')}: ${msg.error}` : t('progDone');
       skeletonWrap.classList.remove('show');
       btn.disabled = false;
-      btn.textContent = 'Транскрибирай отново';
+      btn.textContent = t('btnTranscribeAgain');
 
       if (msg.info && msg.info.duration) {
         totalDuration = msg.info.duration;
@@ -780,9 +1116,9 @@ btn.addEventListener('click', async () => {
     es.close();
     skeletonWrap.classList.remove('show');
     emptyState.style.display = 'flex';
-    progLabel.textContent = 'Грешка при връзката';
+    progLabel.textContent = t('progConnError');
     btn.disabled = false;
-    btn.textContent = 'Транскрибирай';
+    btn.textContent = t('btnTranscribe');
   };
 });
 
@@ -811,26 +1147,30 @@ let readAllIndex = 0;
 const readAllBtn = document.getElementById('read-all-btn');
 
 const VOICES = [
-  { id: 'Schedar', label: 'Schedar (М, спокоен)' },
-  { id: 'Algenib', label: 'Algenib (М)' },
-  { id: 'Charon', label: 'Charon (М)' },
-  { id: 'Iapetus', label: 'Iapetus (М)' },
-  { id: 'Sadaltager', label: 'Sadaltager (М)' },
-  { id: 'Aoede', label: 'Aoede (Ж)' },
-  { id: 'Kore', label: 'Kore (Ж)' },
-  { id: 'Leda', label: 'Leda (Ж)' },
-  { id: 'Vindemiatrix', label: 'Vindemiatrix (Ж)' },
-  { id: 'Despina', label: 'Despina (Ж)' },
+  { id: 'Schedar', male: true, calm: true },
+  { id: 'Algenib', male: true },
+  { id: 'Charon', male: true },
+  { id: 'Iapetus', male: true },
+  { id: 'Sadaltager', male: true },
+  { id: 'Aoede', male: false },
+  { id: 'Kore', male: false },
+  { id: 'Leda', male: false },
+  { id: 'Vindemiatrix', male: false },
+  { id: 'Despina', male: false },
 ];
 let selectedVoice = 'Schedar';
 const voiceSelect = document.getElementById('voice-select');
-VOICES.forEach(v => {
-  const opt = document.createElement('option');
-  opt.value = v.id;
-  opt.textContent = v.label;
-  if (v.id === selectedVoice) opt.selected = true;
-  voiceSelect.appendChild(opt);
-});
+function rebuildVoiceOptions() {
+  voiceSelect.innerHTML = '';
+  VOICES.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.id;
+    const gender = v.male ? t('voiceMale') : t('voiceFemale');
+    opt.textContent = `${v.id} (${gender}${v.calm ? ', ' + t('voiceCalm') : ''})`;
+    if (v.id === selectedVoice) opt.selected = true;
+    voiceSelect.appendChild(opt);
+  });
+}
 voiceSelect.addEventListener('change', () => { selectedVoice = voiceSelect.value; });
 
 async function fetchTTS(text) {
@@ -873,7 +1213,7 @@ function stopReadAll() {
   readAllActive = false;
   readAllBtn.classList.remove('on');
   readAllBtn.querySelector('svg').style.display = '';
-  readAllBtn.lastChild.textContent = ' Прочети всичко';
+  document.getElementById('read-all-label').textContent = t('readAll');
   stopAudio();
 }
 
@@ -881,7 +1221,7 @@ readAllBtn.addEventListener('click', () => {
   if (readAllActive) { stopReadAll(); return; }
   readAllActive = true; readAllIndex = 0;
   readAllBtn.classList.add('on');
-  readAllBtn.lastChild.textContent = ' Спри';
+  document.getElementById('read-all-label').textContent = t('readAllStop');
   if (activeTab !== 'text') { activeTab = 'text'; renderOutput(); }
   playNextInSequence();
 });
@@ -908,27 +1248,27 @@ freeTtsBtn.addEventListener('click', async () => {
   if (freeTtsBtn.classList.contains('on')) {
     stopAudio();
     freeTtsBtn.classList.remove('on');
-    freeTtsBtn.textContent = 'Прочети текста';
+    freeTtsBtn.textContent = t('freeTtsBtn');
     return;
   }
 
   stopAudio();
   freeTtsBtn.disabled = true;
-  freeTtsBtn.textContent = 'Зареждам…';
+  freeTtsBtn.textContent = t('freeTtsBtnLoading');
   try {
     const url = await fetchTTS(text);
     freeTtsBtn.disabled = false;
     freeTtsBtn.classList.add('on');
-    freeTtsBtn.textContent = 'Спри';
+    freeTtsBtn.textContent = t('freeTtsBtnStop');
     const audio = new Audio(url);
     currentAudio = audio;
-    audio.onended = () => { freeTtsBtn.classList.remove('on'); freeTtsBtn.textContent = 'Прочети текста'; };
+    audio.onended = () => { freeTtsBtn.classList.remove('on'); freeTtsBtn.textContent = t('freeTtsBtn'); };
     await audio.play();
   } catch (e) {
     freeTtsBtn.disabled = false;
     freeTtsBtn.classList.remove('on');
-    freeTtsBtn.textContent = 'Прочети текста';
-    freeTtsError.textContent = '❌ ' + (e.message || 'Грешка при генериране на глас.');
+    freeTtsBtn.textContent = t('freeTtsBtn');
+    freeTtsError.textContent = '❌ ' + (e.message || t('errTtsFailed'));
     freeTtsError.style.display = 'block';
   }
 });
@@ -936,6 +1276,8 @@ freeTtsBtn.addEventListener('click', async () => {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
 }
+
+applyI18n();
 </script>
 </body>
 </html>
