@@ -932,6 +932,10 @@ freeTtsBtn.addEventListener('click', async () => {
     freeTtsError.style.display = 'block';
   }
 });
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+}
 </script>
 </body>
 </html>

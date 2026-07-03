@@ -297,6 +297,11 @@ async def manifest():
     return FileResponse(Path(__file__).parent / "manifest.json", media_type="application/manifest+json")
 
 
+@app.get("/sw.js")
+async def service_worker():
+    return FileResponse(Path(__file__).parent / "sw.js", media_type="application/javascript")
+
+
 @app.get("/.well-known/assetlinks.json")
 async def assetlinks():
     path = Path(__file__).parent / ".well-known" / "assetlinks.json"
