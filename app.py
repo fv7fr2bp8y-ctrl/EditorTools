@@ -302,6 +302,12 @@ async def service_worker():
     return FileResponse(Path(__file__).parent / "sw.js", media_type="application/javascript")
 
 
+@app.get("/privacy.html", response_class=HTMLResponse)
+async def privacy():
+    with open(Path(__file__).parent / "privacy.html", encoding="utf-8") as f:
+        return f.read()
+
+
 @app.get("/.well-known/assetlinks.json")
 async def assetlinks():
     path = Path(__file__).parent / ".well-known" / "assetlinks.json"
