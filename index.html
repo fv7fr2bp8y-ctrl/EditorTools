@@ -1278,6 +1278,27 @@ if ('serviceWorker' in navigator) {
 }
 
 applyI18n();
+
+/* ---------- Screenshot demo mode (?demo=1) ---------- */
+if (new URLSearchParams(location.search).get('demo') === '1') {
+  segments = [
+    { start: 0, end: 3.4, text: 'Добре дошли в днешния епизод на нашия подкаст.' },
+    { start: 3.4, end: 8.1, text: 'Днес ще говорим за това как изкуственият интелект променя начина, по който работим.' },
+    { start: 8.1, end: 12.6, text: 'Много хора се притесняват, но истината е доста по-нюансирана.' },
+    { start: 12.6, end: 17.2, text: 'Инструментите ни спестяват часове по рутинните задачи всеки ден.' },
+    { start: 17.2, end: 22.0, text: 'А това ни оставя повече място за креативност и истинско мислене.' },
+  ];
+  emptyState.style.display = 'none';
+  resultView.style.display = 'flex';
+  document.getElementById('info-lang').textContent = 'BG';
+  document.getElementById('info-prob').textContent = '98%';
+  document.getElementById('info-dur').textContent = '22:00';
+  document.getElementById('info-count').textContent = segments.length;
+  renderOutput();
+  fileCard.classList.add('show');
+  fileNameEl.textContent = 'podcast-epizod-42.mp3';
+  fileSubEl.textContent = '18.4 MB';
+}
 </script>
 </body>
 </html>
