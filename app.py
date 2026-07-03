@@ -289,6 +289,22 @@ async def index():
         return f.read()
 
 
+app.mount("/icons", StaticFiles(directory=Path(__file__).parent / "icons"), name="icons")
+
+
+@app.get("/manifest.json")
+async def manifest():
+    return FileResponse(Path(__file__).parent / "manifest.json", media_type="application/manifest+json")
+
+
+@app.get("/.well-known/assetlinks.json")
+async def assetlinks():
+    path = Path(__file__).parent / ".well-known" / "assetlinks.json"
+    if path.exists():
+        return FileResponse(path, media_type="application/json")
+    return []
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7979))
     host = "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"
