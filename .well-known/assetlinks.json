@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "online.editortools.twa",
+        "sha256_cert_fingerprints": ["1A:8F:40:6A:9D:97:C1:1A:F4:CD:D7:40:93:D3:2D:C7:3B:D7:1E:4A:F1:8E:F2:76:05:1B:4C:DE:26:84:7E:08"]
+      }
+    }]

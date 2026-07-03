@@ -13,6 +13,7 @@ RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small', de
 
 COPY app.py index.html manifest.json sw.js ./
 COPY icons ./icons
+COPY .well-known ./.well-known
 
 EXPOSE 7979
 CMD ["python", "app.py"]
