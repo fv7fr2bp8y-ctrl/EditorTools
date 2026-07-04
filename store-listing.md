@@ -1,7 +1,7 @@
 # Play Store listing — EditorTools
 
-## Title
-EditorTools — Транскрипция и глас
+## Title (max 30 chars)
+EditorTools — Аудио в текст
 
 ## Short description (80 chars max)
 
