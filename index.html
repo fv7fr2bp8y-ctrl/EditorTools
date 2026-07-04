@@ -1298,6 +1298,12 @@ if (new URLSearchParams(location.search).get('demo') === '1') {
   fileCard.classList.add('show');
   fileNameEl.textContent = 'podcast-epizod-42.mp3';
   fileSubEl.textContent = '18.4 MB';
+  if (new URLSearchParams(location.search).get('resultonly') === '1') {
+    document.getElementById('drop').style.display = 'none';
+    document.querySelectorAll('.field').forEach(el => el.style.display = 'none');
+    document.getElementById('word-toggle-row').style.display = 'none';
+    document.getElementById('btn').style.display = 'none';
+  }
 }
 </script>
 </body>
