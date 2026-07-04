@@ -3,6 +3,9 @@
       "target": {
         "namespace": "android_app",
         "package_name": "editortools.online",
-        "sha256_cert_fingerprints": ["B4:06:81:EF:D6:CD:E2:05:72:4C:2C:A8:F8:48:81:A9:3C:57:6C:0D:ED:C0:61:04:B0:8E:46:E3:00:74:9A:05"]
+        "sha256_cert_fingerprints": [
+          "24:16:FE:1B:D3:79:59:C5:11:2E:8C:93:F1:B3:CE:92:04:79:2B:FA:34:D9:11:11:F6:3C:34:B0:ED:72:64:1D",
+          "B4:06:81:EF:D6:CD:E2:05:72:4C:2C:A8:F8:48:81:A9:3C:57:6C:0D:ED:C0:61:04:B0:8E:46:E3:00:74:9A:05"
+        ]
       }
     }]
