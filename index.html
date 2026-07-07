@@ -216,6 +216,41 @@
     color: var(--et-error); font-size: 0.85rem; display: none; padding: 2px 2px;
   }
 
+  /* Mic record button */
+  .mic-divider {
+    display: flex; align-items: center; gap: 12px; color: var(--et-faint-2);
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .mic-divider::before, .mic-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--et-border);
+  }
+  .mic-btn {
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 13px; border-radius: 13px; border: 1px solid var(--et-accent-border);
+    background: var(--et-accent-soft); color: var(--et-accent-ink);
+    font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .mic-btn:hover { background: var(--et-accent-tint); border-color: var(--et-accent); }
+  .mic-btn.recording {
+    background: var(--et-error); border-color: var(--et-error); color: #fff;
+    animation: et-mic-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes et-mic-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(216,54,47,0.4); } 50% { box-shadow: 0 0 0 8px rgba(216,54,47,0); } }
+
+  /* Live view */
+  .live-toolbar {
+    display: flex; align-items: center; justify-content: space-between; padding: 16px 24px;
+    border-bottom: 1px solid var(--et-border); flex-wrap: wrap; gap: 10px;
+  }
+  .live-status { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--et-ink); }
+  .live-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--et-error); animation: et-pulse 1s ease-in-out infinite; }
+  .live-timer { font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--et-muted); font-weight: 500; }
+  #live-text-wrap { flex: 1; overflow: auto; padding: 26px 28px; position: relative; }
+  #live-text { font-size: 17px; line-height: 1.8; color: var(--et-ink-soft); }
+  #live-text .interim { color: var(--et-muted); }
+  .live-hint { color: var(--et-faint); font-size: 15px; font-style: italic; }
+
   /* Right panel */
   .panel-right { display: flex; flex-direction: column; background: var(--et-surface); }
 
@@ -390,6 +425,12 @@
           </div>
         </div>
 
+        <div class="mic-divider"><span id="mic-divider-text">или запиши на живо</span></div>
+        <button class="mic-btn" id="mic-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+          <span id="mic-btn-label">Запис от микрофон</span>
+        </button>
+
         <div class="file-card" id="file-card">
           <div class="file-row">
             <div class="file-icon">
@@ -492,6 +533,30 @@
           <div class="tab-content" id="segment-list-wrap"><div id="segment-list"></div></div>
           <div class="tab-content" id="srt-list" style="display:none;"></div>
         </div>
+
+        <!-- LIVE recording view -->
+        <div id="live-view" style="display:none; flex-direction:column; height:100%;">
+          <div class="live-toolbar">
+            <div class="live-status">
+              <span class="live-dot"></span>
+              <span id="live-status-text">Записва…</span>
+              <span class="live-timer" id="live-timer">0:00</span>
+            </div>
+            <div class="toolbar-actions">
+              <button class="icon-only-btn" id="live-copy-btn" title="Копирай">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+              <button class="invert-btn" id="live-dl-btn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>
+                <span id="live-dl-label">Изтегли</span>
+              </button>
+            </div>
+          </div>
+          <div class="tab-content" id="live-text-wrap">
+            <div id="live-text"></div>
+            <span id="live-hint" class="live-hint">Говори — текстът се появява тук…</span>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -570,6 +635,10 @@ const I18N = {
     modelNoteLargeV2: 'най-точен', modelTagLargeV2: 'макс',
     modelNoteLargeV3: 'най-нов, най-точен', modelTagLargeV3: 'макс',
     voiceMale: 'М', voiceFemale: 'Ж', voiceCalm: 'спокоен',
+    micDividerText: 'или запиши на живо', micBtn: 'Запис от микрофон', micStop: 'Спри записа',
+    micRecording: 'Записва…', micDone: 'Готово', liveHint: 'Говори — текстът се появява тук…',
+    micDenied: 'Достъпът до микрофона е отказан. Разреши го в настройките на браузъра.',
+    micUnsupported: 'Записът на живо не се поддържа в този браузър. Пробвай с Chrome.',
   },
   en: {
     brandSub: 'Audio and video to text',
@@ -622,6 +691,10 @@ const I18N = {
     modelNoteLargeV2: 'most accurate', modelTagLargeV2: 'max',
     modelNoteLargeV3: 'newest, most accurate', modelTagLargeV3: 'max',
     voiceMale: 'M', voiceFemale: 'F', voiceCalm: 'calm',
+    micDividerText: 'or record live', micBtn: 'Record from microphone', micStop: 'Stop recording',
+    micRecording: 'Recording…', micDone: 'Done', liveHint: 'Speak — your text appears here…',
+    micDenied: 'Microphone access denied. Allow it in your browser settings.',
+    micUnsupported: 'Live recording is not supported in this browser. Try Chrome.',
   },
   de: {
     brandSub: 'Audio und Video in Text',
@@ -674,6 +747,10 @@ const I18N = {
     modelNoteLargeV2: 'am genauesten', modelTagLargeV2: 'max',
     modelNoteLargeV3: 'neuestes, am genauesten', modelTagLargeV3: 'max',
     voiceMale: 'M', voiceFemale: 'W', voiceCalm: 'ruhig',
+    micDividerText: 'oder live aufnehmen', micBtn: 'Mit Mikrofon aufnehmen', micStop: 'Aufnahme stoppen',
+    micRecording: 'Nimmt auf…', micDone: 'Fertig', liveHint: 'Sprich — dein Text erscheint hier…',
+    micDenied: 'Mikrofonzugriff verweigert. Erlaube ihn in den Browser-Einstellungen.',
+    micUnsupported: 'Live-Aufnahme wird in diesem Browser nicht unterstützt. Versuche Chrome.',
   },
   fr: {
     brandSub: 'Audio et vidéo en texte',
@@ -726,6 +803,10 @@ const I18N = {
     modelNoteLargeV2: 'le plus précis', modelTagLargeV2: 'max',
     modelNoteLargeV3: 'le plus récent, le plus précis', modelTagLargeV3: 'max',
     voiceMale: 'H', voiceFemale: 'F', voiceCalm: 'calme',
+    micDividerText: 'ou enregistrer en direct', micBtn: 'Enregistrer au micro', micStop: 'Arrêter',
+    micRecording: 'Enregistrement…', micDone: 'Terminé', liveHint: 'Parle — ton texte apparaît ici…',
+    micDenied: 'Accès au micro refusé. Autorise-le dans les paramètres du navigateur.',
+    micUnsupported: 'L\'enregistrement en direct n\'est pas pris en charge. Essaie Chrome.',
   },
   es: {
     brandSub: 'Audio y vídeo a texto',
@@ -778,6 +859,10 @@ const I18N = {
     modelNoteLargeV2: 'el más preciso', modelTagLargeV2: 'máx',
     modelNoteLargeV3: 'más nuevo, el más preciso', modelTagLargeV3: 'máx',
     voiceMale: 'M', voiceFemale: 'F', voiceCalm: 'calmado',
+    micDividerText: 'o graba en vivo', micBtn: 'Grabar con micrófono', micStop: 'Detener',
+    micRecording: 'Grabando…', micDone: 'Listo', liveHint: 'Habla — tu texto aparece aquí…',
+    micDenied: 'Acceso al micrófono denegado. Permítelo en los ajustes del navegador.',
+    micUnsupported: 'La grabación en vivo no es compatible con este navegador. Prueba Chrome.',
   },
 };
 
@@ -823,6 +908,10 @@ function applyI18n() {
   document.getElementById('free-text').placeholder = t('freeTextPlaceholder');
   document.getElementById('footer-desc').textContent = t('footerDesc');
   document.getElementById('footer-rights').textContent = t('footerRights');
+  document.getElementById('mic-divider-text').textContent = t('micDividerText');
+  document.getElementById('mic-btn-label').textContent = recording ? t('micStop') : t('micBtn');
+  document.getElementById('live-hint').textContent = t('liveHint');
+  document.getElementById('live-status-text').textContent = recording ? t('micRecording') : t('micDone');
   if (!btn.disabled || currentFile) btn.textContent = resultView.style.display === 'flex' ? t('btnTranscribeAgain') : t('btnTranscribe');
   else btn.textContent = t('btnTranscribe');
   const freeTtsBtnEl = document.getElementById('free-tts-btn');
@@ -1041,10 +1130,12 @@ const resultView = document.getElementById('result-view');
 
 btn.addEventListener('click', async () => {
   if (!currentFile) return;
+  if (recording) stopLiveRecording();
   segments = []; totalDuration = 0;
   errorMsg.style.display = 'none';
   emptyState.style.display = 'none';
   resultView.style.display = 'none';
+  liveView.style.display = 'none';
   skeletonWrap.classList.add('show');
   progressWrap.classList.add('show');
   progBar.style.width = '0%'; progPct.textContent = '0%';
@@ -1271,6 +1362,133 @@ freeTtsBtn.addEventListener('click', async () => {
     freeTtsError.textContent = '❌ ' + (e.message || t('errTtsFailed'));
     freeTtsError.style.display = 'block';
   }
+});
+
+/* ---------- Live microphone transcription (Web Speech API) ---------- */
+const micBtn = document.getElementById('mic-btn');
+const liveView = document.getElementById('live-view');
+const liveTextEl = document.getElementById('live-text');
+const liveHint = document.getElementById('live-hint');
+const liveTimerEl = document.getElementById('live-timer');
+const liveStatusText = document.getElementById('live-status-text');
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const LANG_BCP47 = {
+  '': 'bg-BG', bg: 'bg-BG', en: 'en-US', de: 'de-DE', fr: 'fr-FR',
+  es: 'es-ES', it: 'it-IT', ru: 'ru-RU', pt: 'pt-PT',
+};
+
+let recognition = null;
+let recording = false;
+let liveFinalText = '';
+let liveTimerInt = null;
+let liveStartTs = 0;
+
+function fmtTimer(sec) {
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function startLiveRecording() {
+  if (!SpeechRecognition) {
+    errorMsg.textContent = '❌ ' + t('micUnsupported');
+    errorMsg.style.display = 'block';
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.lang = LANG_BCP47[selectedLang] || 'bg-BG';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  liveFinalText = '';
+  liveTextEl.textContent = '';
+  liveHint.style.display = 'block';
+  errorMsg.style.display = 'none';
+
+  emptyState.style.display = 'none';
+  resultView.style.display = 'none';
+  skeletonWrap.classList.remove('show');
+  liveView.style.display = 'flex';
+
+  recognition.onresult = (event) => {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) liveFinalText += transcript + ' ';
+      else interim += transcript;
+    }
+    liveHint.style.display = 'none';
+    liveTextEl.innerHTML = liveFinalText + (interim ? `<span class="interim">${interim}</span>` : '');
+    document.getElementById('live-text-wrap').scrollTop = document.getElementById('live-text-wrap').scrollHeight;
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      errorMsg.textContent = '❌ ' + t('micDenied');
+      errorMsg.style.display = 'block';
+      stopLiveRecording();
+    } else if (e.error === 'no-speech') {
+      // ignore, keep listening
+    }
+  };
+
+  recognition.onend = () => {
+    // auto-restart if still recording (continuous mode drops after silence)
+    if (recording) { try { recognition.start(); } catch (err) {} }
+  };
+
+  try {
+    recognition.start();
+    recording = true;
+    micBtn.classList.add('recording');
+    document.getElementById('mic-btn-label').textContent = t('micStop');
+    liveStartTs = Date.now();
+    liveStatusText.textContent = t('micRecording');
+    liveTimerInt = setInterval(() => {
+      liveTimerEl.textContent = fmtTimer((Date.now() - liveStartTs) / 1000);
+    }, 500);
+  } catch (err) {
+    errorMsg.textContent = '❌ ' + t('micUnsupported');
+    errorMsg.style.display = 'block';
+  }
+}
+
+function stopLiveRecording() {
+  recording = false;
+  if (recognition) { try { recognition.stop(); } catch (e) {} }
+  if (liveTimerInt) { clearInterval(liveTimerInt); liveTimerInt = null; }
+  micBtn.classList.remove('recording');
+  document.getElementById('mic-btn-label').textContent = t('micBtn');
+  liveStatusText.textContent = t('micDone');
+  document.querySelector('.live-dot').style.animationPlayState = 'paused';
+  document.querySelector('.live-dot').style.opacity = '0.4';
+}
+
+micBtn.addEventListener('click', () => {
+  if (recording) stopLiveRecording();
+  else {
+    document.querySelector('.live-dot').style.animationPlayState = 'running';
+    document.querySelector('.live-dot').style.opacity = '1';
+    startLiveRecording();
+  }
+});
+
+// Hide mic UI entirely if the browser can't do live speech recognition
+if (!SpeechRecognition) {
+  micBtn.style.display = 'none';
+  document.querySelector('.mic-divider').style.display = 'none';
+}
+
+document.getElementById('live-copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(liveFinalText.trim());
+});
+document.getElementById('live-dl-btn').addEventListener('click', () => {
+  const blob = new Blob([liveFinalText.trim()], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'live-transcript.txt';
+  a.click();
+  URL.revokeObjectURL(url);
 });
 
 if ('serviceWorker' in navigator) {
