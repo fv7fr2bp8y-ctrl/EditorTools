@@ -54,6 +54,9 @@
   @keyframes et-spin { to { transform: rotate(360deg); } }
   @keyframes et-bar { 0%,100% { transform: scaleY(0.35); } 50% { transform: scaleY(1); } }
   @keyframes et-pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+  @keyframes et-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes et-row-in { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
   html, body {
     background: var(--et-page);
@@ -253,6 +256,7 @@
 
   /* Right panel */
   .panel-right { display: flex; flex-direction: column; background: var(--et-surface); }
+  #result-view, #live-view { animation: et-fade-in 0.35s ease; }
 
   .empty-state {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -304,7 +308,14 @@
   .seg-row {
     display: grid; grid-template-columns: 44px 1fr auto; align-items: flex-start; gap: 10px;
     padding: 10px 12px; border-radius: 12px; transition: background 0.15s;
+    animation: et-row-in 0.3s ease backwards;
   }
+  .seg-row:nth-child(1) { animation-delay: 0.02s; }
+  .seg-row:nth-child(2) { animation-delay: 0.06s; }
+  .seg-row:nth-child(3) { animation-delay: 0.1s; }
+  .seg-row:nth-child(4) { animation-delay: 0.14s; }
+  .seg-row:nth-child(5) { animation-delay: 0.18s; }
+  .seg-row:nth-child(n+6) { animation-delay: 0.22s; }
   .seg-row:hover { background: var(--et-hover); }
   .seg-ts { font-size: 12px; font-weight: 500; color: var(--et-srt-time); font-family: 'Geist Mono', monospace; padding-top: 3px; }
   .seg-text { font-size: 15px; line-height: 1.6; color: var(--et-ink-soft); }
@@ -353,6 +364,13 @@
   .footer-meta a { color: var(--et-accent); text-decoration: none; }
   .footer-meta a:hover { text-decoration: underline; }
 
+  /* Keyboard focus visibility */
+  button:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+    outline: 2px solid var(--et-accent); outline-offset: 2px;
+  }
+  button:active { transform: scale(0.98); }
+  .mic-btn:active, #btn:active { transform: scale(0.985); }
+
   @media (max-width: 900px) {
     .app-grid { grid-template-columns: 1fr; }
     .panel-left { border-right: none; border-bottom: 1px solid var(--et-border); }
@@ -381,12 +399,12 @@
       </div>
     </div>
     <div class="topbar-actions">
-      <select class="select-dd" id="ui-lang-select" style="width:auto; min-width:100px; padding:9px 30px 9px 13px;">
-        <option value="bg">Български</option>
-        <option value="en">English</option>
-        <option value="de">Deutsch</option>
-        <option value="fr">Français</option>
-        <option value="es">Español</option>
+      <select class="select-dd" id="ui-lang-select" style="width:auto; min-width:118px; padding:9px 30px 9px 13px;">
+        <option value="bg">🇧🇬 Български</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="es">🇪🇸 Español</option>
       </select>
       <button class="icon-btn" id="theme-toggle" title="Смени темата">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon">
@@ -961,15 +979,15 @@ const MODELS = [
   { id: 'large-v3', name: 'Large v3', noteKey: 'modelNoteLargeV3', tagKey: 'modelTagLargeV3' },
 ];
 const LANGS = [
-  { id: '', labelKey: 'langAuto' },
-  { id: 'bg', label: 'Български' },
-  { id: 'en', label: 'English' },
-  { id: 'de', label: 'Deutsch' },
-  { id: 'fr', label: 'Français' },
-  { id: 'es', label: 'Español' },
-  { id: 'it', label: 'Italiano' },
-  { id: 'ru', label: 'Русский' },
-  { id: 'pt', label: 'Português' },
+  { id: '', labelKey: 'langAuto', flag: '🌐' },
+  { id: 'bg', label: 'Български', flag: '🇧🇬' },
+  { id: 'en', label: 'English', flag: '🇬🇧' },
+  { id: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { id: 'fr', label: 'Français', flag: '🇫🇷' },
+  { id: 'es', label: 'Español', flag: '🇪🇸' },
+  { id: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { id: 'ru', label: 'Русский', flag: '🇷🇺' },
+  { id: 'pt', label: 'Português', flag: '🇵🇹' },
 ];
 
 let selectedModel = 'small';
@@ -995,7 +1013,8 @@ function rebuildLangOptions() {
   LANGS.forEach(l => {
     const opt = document.createElement('option');
     opt.value = l.id;
-    opt.textContent = l.labelKey ? t(l.labelKey) : l.label;
+    const name = l.labelKey ? t(l.labelKey) : l.label;
+    opt.textContent = (l.flag ? l.flag + ' ' : '') + name;
     if (l.id === selectedLang) opt.selected = true;
     langSelect.appendChild(opt);
   });
