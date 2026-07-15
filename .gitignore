@@ -6,3 +6,5 @@ __pycache__/
 *.mp3
 *.mxf
 .DS_Store
+*.db
+analytics.db

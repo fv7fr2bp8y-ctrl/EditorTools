@@ -1241,6 +1241,7 @@ document.getElementById('dl-btn').addEventListener('click', () => {
   a.download = `${base}.${ext}`;
   a.click();
   URL.revokeObjectURL(url);
+  track('download', ext);
 });
 
 /* ---------- Text-to-speech ---------- */
@@ -1452,6 +1453,7 @@ function startLiveRecording() {
   try {
     recognition.start();
     recording = true;
+    track('live', recognition.lang);
     micBtn.classList.add('recording');
     document.getElementById('mic-btn-label').textContent = t('micStop');
     liveStartTs = Date.now();
@@ -1505,6 +1507,23 @@ document.getElementById('live-dl-btn').addEventListener('click', () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+}
+
+/* ---------- Privacy-friendly analytics ---------- */
+function track(event, extra) {
+  try {
+    const fd = new FormData();
+    fd.append('event', event);
+    fd.append('ui_lang', currentUiLang || '');
+    let tz = '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    fd.append('country', tz);
+    if (extra) fd.append('extra', extra);
+    fetch('/track', { method: 'POST', body: fd, keepalive: true }).catch(() => {});
+  } catch (e) {}
+}
+if (!new URLSearchParams(location.search).get('demo')) {
+  track('pageview');
 }
 
 applyI18n();

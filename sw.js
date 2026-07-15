@@ -1,4 +1,4 @@
-const CACHE_NAME = 'editortools-v4';
+const CACHE_NAME = 'editortools-v5';
 const CORE_ASSETS = ['/', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
