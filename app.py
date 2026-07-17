@@ -344,9 +344,12 @@ async def tts(request: Request, text: str = Form(...), voice: str = Form(TTS_VOI
     check_and_increment(get_client_ip(request), "tts", DAILY_TTS_LIMIT)
     log_event(request, "tts", extra=voice)
 
-    result = await gemini_tts_once(text, voice)
-    if not result:
-        result = await gemini_tts_once(text, voice)  # един повторен опит
+    # Gemini понякога връща текст вместо аудио — до 4 опита свеждат провала под ~2%
+    result = None
+    for _ in range(4):
+        result = await gemini_tts_once(text, voice)
+        if result:
+            break
     if not result:
         raise HTTPException(502, "Gemini TTS не върна аудио")
 
