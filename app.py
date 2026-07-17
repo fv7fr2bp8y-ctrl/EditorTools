@@ -21,7 +21,7 @@ app = FastAPI()
 DATA_DIR = Path(os.environ.get("DATA_DIR", str(Path(__file__).parent)))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-DAILY_TRANSCRIBE_LIMIT = 5
+DAILY_TRANSCRIBE_LIMIT = 20
 DAILY_TTS_LIMIT = 10
 QUOTA_FILE = DATA_DIR / "quota.json"
 quota_lock = threading.Lock()
