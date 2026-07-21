@@ -17,6 +17,18 @@ import uvicorn
 
 app = FastAPI()
 
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    resp = await call_next(request)
+    resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    resp.headers["X-Frame-Options"] = "SAMEORIGIN"
+    resp.headers["Permissions-Policy"] = "microphone=(self)"
+    return resp
+
+
 # Persistent data dir (Railway volume mounts at /data; falls back to local dir)
 DATA_DIR = Path(os.environ.get("DATA_DIR", str(Path(__file__).parent)))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
