@@ -363,6 +363,17 @@
   .footer-meta { font-size: 12px; color: var(--et-faint); }
   .footer-meta a { color: var(--et-accent); text-decoration: none; }
   .footer-meta a:hover { text-decoration: underline; }
+  .play-badge {
+    display: inline-flex; align-items: center; gap: 10px; margin: 4px auto 6px;
+    padding: 8px 16px; border-radius: 10px; text-decoration: none;
+    background: #000; border: 1px solid rgba(255,255,255,0.22);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .play-badge:hover { background: #111; border-color: rgba(255,255,255,0.4); }
+  .play-badge-text { display: flex; flex-direction: column; line-height: 1.05; text-align: left; }
+  .play-badge-top { font-size: 9px; color: #E8E8F0; text-transform: uppercase; letter-spacing: 0.05em; }
+  .play-badge-name { font-size: 15px; color: #fff; font-weight: 600; }
+  @media (display-mode: standalone) { .play-badge { display: none; } }
 
   /* Keyboard focus visibility */
   button:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
@@ -598,6 +609,10 @@
 
   <footer class="site-footer">
     <p id="footer-desc">EditorTools помага да превърнеш аудио и видео в текст бързо и лесно — с транскрипция и генериране на глас на едно място.</p>
+    <a class="play-badge" href="https://play.google.com/store/apps/details?id=editortools.online" target="_blank" rel="noopener">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.3c-.3.2-.5.6-.5 1.1v17.2c0 .5.2.9.5 1.1l.1.1L13.4 12v-.1L3.7 2.2l-.1.1z" fill="#00D0FF"/><path d="M17 15.3 13.4 12v-.1l3.6-3.3.1.1 4.3 2.4c1.2.7 1.2 1.8 0 2.5L17.1 15.2l-.1.1z" fill="#FFD500"/><path d="M17.1 15.2 13.4 12 3.6 21.7c.4.4 1 .5 1.8.1l11.7-6.6" fill="#FF3A44"/><path d="M17.1 8.8 5.4 2.2c-.8-.4-1.4-.4-1.8.1L13.4 12l3.7-3.2z" fill="#00E676"/></svg>
+      <span class="play-badge-text"><span class="play-badge-top">Вземи го от</span><span class="play-badge-name">Google Play</span></span>
+    </a>
     <p class="footer-meta">© 2026 EditorTools. <span id="footer-rights">Всички права запазени.</span> · <a href="mailto:support@editortools.online">support@editortools.online</a></p>
   </footer>
 </div>
