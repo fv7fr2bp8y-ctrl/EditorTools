@@ -534,7 +534,7 @@
           </div>
           <div style="display:flex; flex-direction:column; gap:5px; max-width:320px;">
             <span class="empty-title" id="empty-title">Тук ще се появи транскрипцията</span>
-            <span class="empty-sub" id="empty-sub">Качи файл и натисни „Транскрибирай". Резултатът се появява като текст и SRT субтитри.</span>
+            <span class="empty-sub" id="empty-sub">Качи файл и натисни „Транскрибирай". Резултатът се появява като текст и субтитри SRT/VTT.</span>
           </div>
         </div>
 
@@ -558,6 +558,7 @@
             <div class="tab-group">
               <button class="tab-btn active" id="tab-text-btn">Текст</button>
               <button class="tab-btn" id="tab-srt-btn">SRT</button>
+              <button class="tab-btn" id="tab-vtt-btn">VTT</button>
             </div>
             <div class="toolbar-actions">
               <button class="toolbar-btn" id="read-all-btn">
@@ -623,6 +624,9 @@
       <select class="select-dd" id="voice-select" style="width:auto; min-width:150px;"></select>
       <button class="toolbar-btn" id="free-tts-btn">Прочети текста</button>
     </div>
+    <div style="display:flex; justify-content:flex-end;">
+      <a class="toolbar-btn" id="free-tts-dl" style="display:none; text-decoration:none;" download="editortools-glas.wav">Изтегли аудио (WAV)</a>
+    </div>
     <div id="free-tts-error" style="color:var(--et-error); font-size:0.85rem; display:none;"></div>
   </div>
 
@@ -665,7 +669,7 @@ const I18N = {
     btnProcessing: 'Обработка…',
     btnTranscribeAgain: 'Транскрибирай отново',
     emptyTitle: 'Тук ще се появи транскрипцията',
-    emptySub: 'Качи файл и натисни „Транскрибирай". Резултатът се появява като текст и SRT субтитри.',
+    emptySub: 'Качи файл и натисни „Транскрибирай". Резултатът се появява като текст и субтитри SRT/VTT.',
     skeletonStatus: 'Транскрипцията се ражда…',
     tabText: 'Текст',
     readAll: 'Прочети всичко',
@@ -681,6 +685,7 @@ const I18N = {
     freeTtsBtn: 'Прочети текста',
     freeTtsBtnStop: 'Спри',
     freeTtsBtnLoading: 'Зареждам…',
+    ttsDownload: 'Изтегли аудио (WAV)',
     footerDesc: 'EditorTools помага да превърнеш аудио и видео в текст бързо и лесно — с транскрипция и генериране на глас на едно място.',
     footerRights: 'Всички права запазени.',
     listenTitle: 'Чуй',
@@ -721,7 +726,7 @@ const I18N = {
     btnProcessing: 'Processing…',
     btnTranscribeAgain: 'Transcribe again',
     emptyTitle: 'Your transcript will appear here',
-    emptySub: 'Upload a file and press "Transcribe". The result appears as editable text and SRT subtitles.',
+    emptySub: 'Upload a file and press "Transcribe". The result appears as editable text and SRT/VTT subtitles.',
     skeletonStatus: 'Transcribing…',
     tabText: 'Text',
     readAll: 'Read all',
@@ -737,6 +742,7 @@ const I18N = {
     freeTtsBtn: 'Read text',
     freeTtsBtnStop: 'Stop',
     freeTtsBtnLoading: 'Loading…',
+    ttsDownload: 'Download audio (WAV)',
     footerDesc: 'EditorTools helps you turn audio and video into text quickly and easily — with transcription and voice generation in one place.',
     footerRights: 'All rights reserved.',
     listenTitle: 'Listen',
@@ -777,7 +783,7 @@ const I18N = {
     btnProcessing: 'Verarbeitung…',
     btnTranscribeAgain: 'Erneut transkribieren',
     emptyTitle: 'Hier erscheint die Transkription',
-    emptySub: 'Lade eine Datei hoch und klicke auf „Transkribieren". Das Ergebnis erscheint als Text und SRT-Untertitel.',
+    emptySub: 'Lade eine Datei hoch und klicke auf „Transkribieren". Das Ergebnis erscheint als Text und SRT/VTT-Untertitel.',
     skeletonStatus: 'Transkription läuft…',
     tabText: 'Text',
     readAll: 'Alles vorlesen',
@@ -793,6 +799,7 @@ const I18N = {
     freeTtsBtn: 'Text vorlesen',
     freeTtsBtnStop: 'Stopp',
     freeTtsBtnLoading: 'Lädt…',
+    ttsDownload: 'Audio herunterladen (WAV)',
     footerDesc: 'EditorTools hilft dir, Audio und Video schnell und einfach in Text zu verwandeln — mit Transkription und Sprachgenerierung an einem Ort.',
     footerRights: 'Alle Rechte vorbehalten.',
     listenTitle: 'Anhören',
@@ -833,7 +840,7 @@ const I18N = {
     btnProcessing: 'Traitement…',
     btnTranscribeAgain: 'Transcrire à nouveau',
     emptyTitle: 'La transcription apparaîtra ici',
-    emptySub: 'Téléverse un fichier et clique sur « Transcrire ». Le résultat apparaît en texte et sous-titres SRT.',
+    emptySub: 'Téléverse un fichier et clique sur « Transcrire ». Le résultat apparaît en texte et sous-titres SRT/VTT.',
     skeletonStatus: 'Transcription en cours…',
     tabText: 'Texte',
     readAll: 'Tout lire',
@@ -849,6 +856,7 @@ const I18N = {
     freeTtsBtn: 'Lire le texte',
     freeTtsBtnStop: 'Arrêter',
     freeTtsBtnLoading: 'Chargement…',
+    ttsDownload: 'Télécharger l’audio (WAV)',
     footerDesc: 'EditorTools t\'aide à transformer audio et vidéo en texte rapidement et facilement — transcription et génération vocale au même endroit.',
     footerRights: 'Tous droits réservés.',
     listenTitle: 'Écouter',
@@ -889,7 +897,7 @@ const I18N = {
     btnProcessing: 'Procesando…',
     btnTranscribeAgain: 'Transcribir de nuevo',
     emptyTitle: 'Aquí aparecerá la transcripción',
-    emptySub: 'Sube un archivo y pulsa "Transcribir". El resultado aparece como texto y subtítulos SRT.',
+    emptySub: 'Sube un archivo y pulsa "Transcribir". El resultado aparece como texto y subtítulos SRT/VTT.',
     skeletonStatus: 'Transcribiendo…',
     tabText: 'Texto',
     readAll: 'Leer todo',
@@ -905,6 +913,7 @@ const I18N = {
     freeTtsBtn: 'Leer el texto',
     freeTtsBtnStop: 'Detener',
     freeTtsBtnLoading: 'Cargando…',
+    ttsDownload: 'Descargar audio (WAV)',
     footerDesc: 'EditorTools te ayuda a convertir audio y vídeo en texto de forma rápida y sencilla — con transcripción y generación de voz en un solo lugar.',
     footerRights: 'Todos los derechos reservados.',
     listenTitle: 'Escuchar',
@@ -979,6 +988,7 @@ function applyI18n() {
   document.getElementById('live-status-text').textContent = recording ? t('micRecording') : t('micDone');
   if (!btn.disabled || currentFile) btn.textContent = resultView.style.display === 'flex' ? t('btnTranscribeAgain') : t('btnTranscribe');
   else btn.textContent = t('btnTranscribe');
+  document.getElementById('free-tts-dl').textContent = t('ttsDownload');
   const freeTtsBtnEl = document.getElementById('free-tts-btn');
   if (!freeTtsBtnEl.classList.contains('on') && !freeTtsBtnEl.disabled) freeTtsBtnEl.textContent = t('freeTtsBtn');
   rebuildModelOptions();
@@ -1131,12 +1141,15 @@ const segmentList = document.getElementById('segment-list');
 
 tabTextBtn.addEventListener('click', () => { activeTab = 'text'; renderOutput(); });
 tabSrtBtn.addEventListener('click', () => { activeTab = 'srt'; renderOutput(); });
+const tabVttBtn = document.getElementById('tab-vtt-btn');
+tabVttBtn.addEventListener('click', () => { activeTab = 'vtt'; renderOutput(); });
 
 function renderOutput() {
   tabTextBtn.classList.toggle('active', activeTab === 'text');
   tabSrtBtn.classList.toggle('active', activeTab === 'srt');
+  tabVttBtn.classList.toggle('active', activeTab === 'vtt');
   segmentListWrap.style.display = activeTab === 'text' ? 'block' : 'none';
-  srtListEl.style.display = activeTab === 'srt' ? 'block' : 'none';
+  srtListEl.style.display = activeTab !== 'text' ? 'block' : 'none';
   if (activeTab === 'text') renderSegmentList();
   else renderSrtList();
 }
@@ -1173,7 +1186,7 @@ function renderSrtList() {
     block.innerHTML = `
       <span class="srt-num">${i+1}</span>
       <div>
-        <div class="srt-range">${fmtSRT(s.start)} → ${fmtSRT(s.end)}</div>
+        <div class="srt-range">${fmtCue(s.start)} → ${fmtCue(s.end)}</div>
         <div class="srt-text">${s.text.trim()}</div>
       </div>
     `;
@@ -1184,6 +1197,15 @@ function renderSrtList() {
 function fmtSRT(sec) {
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60), ms = Math.floor((sec % 1) * 1000);
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+}
+function fmtCue(sec) { return activeTab === 'vtt' ? fmtSRT(sec).replace(',', '.') : fmtSRT(sec); }
+function toVTT(segs) {
+  return 'WEBVTT\n\n' + segs.map((s, i) => `${i+1}\n${fmtSRT(s.start).replace(',', '.')} --> ${fmtSRT(s.end).replace(',', '.')}\n${s.text.trim()}\n`).join('\n');
+}
+function exportContent() {
+  if (activeTab === 'text') return { content: segments.map(s => s.text.trim()).join('\n'), ext: 'txt' };
+  if (activeTab === 'vtt') return { content: toVTT(segments), ext: 'vtt' };
+  return { content: toSRT(segments), ext: 'srt' };
 }
 function toSRT(segs) {
   return segs.map((s, i) => `${i+1}\n${fmtSRT(s.start)} --> ${fmtSRT(s.end)}\n${s.text.trim()}\n`).join('\n');
@@ -1281,13 +1303,11 @@ btn.addEventListener('click', async () => {
 
 /* ---------- Copy / Download ---------- */
 document.getElementById('copy-btn').addEventListener('click', () => {
-  const content = activeTab === 'text' ? segments.map(s => s.text.trim()).join('\n') : toSRT(segments);
-  navigator.clipboard.writeText(content);
+  navigator.clipboard.writeText(exportContent().content);
 });
 document.getElementById('dl-btn').addEventListener('click', () => {
-  const content = activeTab === 'text' ? segments.map(s => s.text.trim()).join('\n') : toSRT(segments);
-  const ext = activeTab === 'text' ? 'txt' : 'srt';
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const { content, ext } = exportContent();
+  const blob = new Blob([content], { type: ext === 'vtt' ? 'text/vtt;charset=utf-8' : 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1415,6 +1435,9 @@ freeTtsBtn.addEventListener('click', async () => {
   freeTtsBtn.textContent = t('freeTtsBtnLoading');
   try {
     const url = await fetchTTS(text);
+    const dl = document.getElementById('free-tts-dl');
+    dl.href = url;
+    dl.style.display = 'inline-flex';
     freeTtsBtn.disabled = false;
     freeTtsBtn.classList.add('on');
     freeTtsBtn.textContent = t('freeTtsBtnStop');
@@ -1429,6 +1452,11 @@ freeTtsBtn.addEventListener('click', async () => {
     freeTtsError.textContent = '❌ ' + (e.message || t('errTtsFailed'));
     freeTtsError.style.display = 'block';
   }
+});
+
+document.getElementById('free-tts-dl').addEventListener('click', () => track('download', 'wav'));
+document.getElementById('free-text').addEventListener('input', () => {
+  document.getElementById('free-tts-dl').style.display = 'none';
 });
 
 /* ---------- Live microphone transcription (Web Speech API) ---------- */
