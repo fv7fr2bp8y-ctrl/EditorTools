@@ -363,6 +363,23 @@
   .footer-meta { font-size: 12px; color: var(--et-faint); }
   .footer-meta a { color: var(--et-accent); text-decoration: none; }
   .footer-meta a:hover { text-decoration: underline; }
+
+  .pro-card { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    margin: 18px auto 0; max-width: 1100px; padding: 16px 20px; border-radius: 14px;
+    border: 1px solid rgba(124,92,255,0.35); background: rgba(124,92,255,0.08); }
+  .pro-card-title { font-weight: 700; font-size: 1rem; }
+  .pro-card-sub { font-size: 0.88rem; opacity: 0.8; margin-top: 2px; }
+  .pro-pill { display:inline-block; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em;
+    padding: 2px 7px; border-radius: 6px; background: #7c5cff; color: #fff; vertical-align: middle; }
+  .pro-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none;
+    align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+  .pro-modal.show { display: flex; }
+  .pro-modal-box { max-width: 420px; width: 100%; border-radius: 16px; padding: 24px;
+    background: var(--et-surface, #16161d); color: inherit; border: 1px solid rgba(124,92,255,0.4); }
+  .pro-modal-box h3 { margin: 0 0 8px; font-size: 1.2rem; }
+  .pro-modal-box p { margin: 0 0 16px; opacity: 0.85; line-height: 1.5; }
+  .pro-modal-actions { display:flex; gap:10px; justify-content:flex-end; flex-wrap: wrap; }
+  .pro-link-btn { background: none; border: none; color: inherit; opacity: 0.7; cursor: pointer; font: inherit; }
   .play-badge {
     display: inline-flex; align-items: center; gap: 10px; margin: 4px auto 6px;
     padding: 8px 16px; border-radius: 10px; text-decoration: none;
@@ -605,6 +622,15 @@
       <button class="toolbar-btn" id="free-tts-btn">Прочети текста</button>
     </div>
     <div id="free-tts-error" style="color:var(--et-error); font-size:0.85rem; display:none;"></div>
+  </div>
+
+
+  <div class="pro-card" id="pro-card" style="display:none">
+    <div class="pro-card-text">
+      <div class="pro-card-title"><span class="pro-pill">PRO</span> <span id="pro-title">EditorTools Pro</span></div>
+      <div class="pro-card-sub" id="pro-sub"></div>
+    </div>
+    <button class="toolbar-btn" id="pro-btn"></button>
   </div>
 
   <footer class="site-footer">
@@ -1579,6 +1605,159 @@ if (new URLSearchParams(location.search).get('demo') === '1') {
     document.getElementById('btn').style.display = 'none';
   }
 }
+</script>
+
+<div class="pro-modal" id="pro-modal" role="dialog" aria-modal="true">
+  <div class="pro-modal-box">
+    <h3 id="pro-modal-title"></h3>
+    <p id="pro-modal-text"></p>
+    <div class="pro-modal-actions">
+      <button class="pro-link-btn" id="pro-modal-close"></button>
+      <button class="toolbar-btn" id="pro-modal-buy"></button>
+    </div>
+  </div>
+</div>
+<script>
+/* ---------- EditorTools Pro (Stripe on the web; hidden inside the Android app) ---------- */
+(function () {
+  const PRO_KEY = 'et-pro-token';
+  const S = {
+    bg: { free: '3 безплатни транскрипции и 3 озвучавания на ден. С Pro: 100 на ден.', buy: 'Вземи Pro за 1,99 €/месец',
+          active: 'Pro е активен до {d}.', manage: 'Управлявай абонамента', limitTitle: 'Дневният лимит е изчерпан',
+          limitText: 'Безплатно са 3 транскрипции и 3 озвучавания на ден. С EditorTools Pro получаваш 100 на ден за 1,99 € на месец. Отказваш се по всяко време.',
+          later: 'По-късно', welcome: 'Добре дошъл в Pro! Лимитът вече е 100 на ден.', claimFail: 'Плащането не е потвърдено. Пиши ни на support@editortools.online.' },
+    en: { free: '3 free transcriptions and 3 voiceovers a day. With Pro: 100 a day.', buy: 'Get Pro for €1.99/month',
+          active: 'Pro is active until {d}.', manage: 'Manage subscription', limitTitle: 'Daily limit reached',
+          limitText: 'You get 3 transcriptions and 3 voiceovers a day for free. EditorTools Pro gives you 100 a day for €1.99 a month. Cancel anytime.',
+          later: 'Later', welcome: 'Welcome to Pro! Your limit is now 100 a day.', claimFail: 'Payment not confirmed. Write to support@editortools.online.' },
+    de: { free: '3 kostenlose Transkriptionen und 3 Sprachausgaben pro Tag. Mit Pro: 100 pro Tag.', buy: 'Pro für 1,99 €/Monat',
+          active: 'Pro ist aktiv bis {d}.', manage: 'Abo verwalten', limitTitle: 'Tageslimit erreicht',
+          limitText: 'Kostenlos sind 3 Transkriptionen und 3 Sprachausgaben pro Tag. Mit EditorTools Pro bekommst du 100 pro Tag für 1,99 € im Monat. Jederzeit kündbar.',
+          later: 'Später', welcome: 'Willkommen bei Pro! Dein Limit liegt jetzt bei 100 pro Tag.', claimFail: 'Zahlung nicht bestätigt. Schreib an support@editortools.online.' },
+    fr: { free: '3 transcriptions et 3 voix gratuites par jour. Avec Pro : 100 par jour.', buy: 'Passer à Pro pour 1,99 €/mois',
+          active: 'Pro est actif jusqu’au {d}.', manage: 'Gérer l’abonnement', limitTitle: 'Limite quotidienne atteinte',
+          limitText: 'Gratuitement : 3 transcriptions et 3 voix par jour. EditorTools Pro vous donne 100 par jour pour 1,99 € par mois. Résiliable à tout moment.',
+          later: 'Plus tard', welcome: 'Bienvenue dans Pro ! Votre limite est maintenant de 100 par jour.', claimFail: 'Paiement non confirmé. Écrivez à support@editortools.online.' },
+    es: { free: '3 transcripciones y 3 locuciones gratis al día. Con Pro: 100 al día.', buy: 'Hazte Pro por 1,99 €/mes',
+          active: 'Pro está activo hasta el {d}.', manage: 'Gestionar suscripción', limitTitle: 'Límite diario alcanzado',
+          limitText: 'Gratis tienes 3 transcripciones y 3 locuciones al día. EditorTools Pro te da 100 al día por 1,99 € al mes. Cancela cuando quieras.',
+          later: 'Más tarde', welcome: '¡Bienvenido a Pro! Tu límite ahora es de 100 al día.', claimFail: 'Pago no confirmado. Escríbenos a support@editortools.online.' },
+  };
+  const L = () => S[(typeof currentUiLang !== 'undefined' && S[currentUiLang]) ? currentUiLang : 'bg'];
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  // Inside the Google Play app (TWA) web payments are not allowed: hide Pro there.
+  try { if (document.referrer.startsWith('android-app://')) sessionStorage.setItem('et-in-app', '1'); } catch (e) {}
+  const inApp = (() => { try { return sessionStorage.getItem('et-in-app') === '1'; } catch (e) { return false; } })();
+
+  let state = { active: false, period_end: 0 };
+  const token = () => store.get(PRO_KEY) || '';
+
+  // Send the Pro token with transcription and TTS requests; open the offer on a 429.
+  const origFetch = window.fetch.bind(window);
+  window.fetch = async (input, init = {}) => {
+    const url = typeof input === 'string' ? input : input.url;
+    if ((url === '/transcribe' || url === '/tts') && token()) {
+      init.headers = new Headers(init.headers || {});
+      init.headers.set('X-Pro-Token', token());
+    }
+    const res = await origFetch(input, init);
+    if ((url === '/transcribe' || url === '/tts') && res.status === 429 && (!inApp || play.price) && !state.active) openModal();
+    return res;
+  };
+
+  const $ = id => document.getElementById(id);
+  function render() {
+    const l = L();
+    if (inApp && !play.price && !state.active) { $('pro-card').style.display = 'none'; return; }
+    $('pro-card').style.display = 'flex';
+    if (state.active) {
+      const d = new Date(state.period_end * 1000).toLocaleDateString(typeof currentUiLang !== 'undefined' ? currentUiLang : 'bg');
+      $('pro-sub').textContent = l.active.replace('{d}', d);
+      $('pro-btn').textContent = l.manage;
+    } else {
+      $('pro-sub').textContent = l.free;
+      $('pro-btn').textContent = inApp ? l.buy.replace(/1,99\s?€|€1\.99/, play.price) : l.buy;
+    }
+    $('pro-modal-title').textContent = l.limitTitle;
+    $('pro-modal-text').textContent = l.limitText;
+    $('pro-modal-close').textContent = l.later;
+    $('pro-modal-buy').textContent = inApp ? l.buy.replace(/1,99\s?€|€1\.99/, play.price) : l.buy;
+  }
+  function openModal() { render(); $('pro-modal').classList.add('show'); }
+  function closeModal() { $('pro-modal').classList.remove('show'); }
+
+  // ----- Google Play Billing (Digital Goods API) inside the Android app -----
+  const PLAY_SERVICE = 'https://play.google.com/billing';
+  const PLAY_SKU = 'editortools_pro_monthly';
+  const play = { svc: null, price: '' };
+  async function playInit() {
+    if (!inApp || !('getDigitalGoodsService' in window)) return;
+    play.svc = await window.getDigitalGoodsService(PLAY_SERVICE).catch(() => null);
+    if (!play.svc) return;
+    const d = (await play.svc.getDetails([PLAY_SKU]).catch(() => []))[0];
+    if (d) play.price = new Intl.NumberFormat(undefined, { style: 'currency', currency: d.price.currency }).format(Number(d.price.value));
+    // Restore an existing Play subscription (new phone, cleared data).
+    if (!token()) {
+      const owned = (await play.svc.listPurchases().catch(() => [])).find(p => p.itemId === PLAY_SKU);
+      if (owned) await playClaim(owned.purchaseToken).catch(() => {});
+    }
+  }
+  async function playClaim(purchaseToken) {
+    const r = await origFetch('/pro/play/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ purchaseToken }) });
+    const j = await r.json().catch(() => ({}));
+    if (!j.token) throw new Error(j.detail || 'claim failed');
+    store.set(PRO_KEY, j.token);
+  }
+  async function playBuy() {
+    const req = new PaymentRequest([{ supportedMethods: PLAY_SERVICE, data: { sku: PLAY_SKU } }],
+      { total: { label: 'EditorTools Pro', amount: { currency: 'EUR', value: '0' } } });
+    const resp = await req.show();
+    try {
+      await playClaim(resp.details.purchaseToken || resp.details.token);
+      await resp.complete('success');
+      closeModal(); alert(L().welcome); refresh();
+    } catch (e) { await resp.complete('fail'); alert(L().claimFail); }
+  }
+
+  async function buy() {
+    if (inApp) return playBuy().catch(() => {});
+    const r = await origFetch('/pro/checkout?lang=' + (typeof currentUiLang !== 'undefined' ? currentUiLang : 'bg'), { method: 'POST' });
+    const j = await r.json().catch(() => ({}));
+    if (j.url) location.href = j.url; else alert(j.detail || 'Error');
+  }
+  async function manage() {
+    if (inApp) { location.href = 'https://play.google.com/store/account/subscriptions?sku=' + PLAY_SKU + '&package=editortools.online'; return; }
+    const r = await origFetch('/pro/portal', { method: 'POST', headers: { 'X-Pro-Token': token() } });
+    const j = await r.json().catch(() => ({}));
+    if (j.url) location.href = j.url; else alert(j.detail || 'Error');
+  }
+  async function refresh() {
+    if (!token()) { render(); return; }
+    const r = await origFetch('/pro/status', { headers: { 'X-Pro-Token': token() } });
+    state = await r.json().catch(() => ({ active: false }));
+    render();
+  }
+  async function claimFromUrl() {
+    const q = new URLSearchParams(location.search);
+    const sid = q.get('pro_session');
+    if (q.has('pro_session') || q.has('pro_cancel')) history.replaceState(null, '', location.pathname);
+    if (!sid) return;
+    const r = await origFetch('/pro/claim?session_id=' + encodeURIComponent(sid));
+    const j = await r.json().catch(() => ({}));
+    if (j.token) { store.set(PRO_KEY, j.token); alert(L().welcome); } else alert(L().claimFail);
+  }
+
+  $('pro-btn').addEventListener('click', () => state.active ? manage() : buy());
+  $('pro-modal-buy').addEventListener('click', buy);
+  $('pro-modal-close').addEventListener('click', closeModal);
+  $('pro-modal').addEventListener('click', e => { if (e.target.id === 'pro-modal') closeModal(); });
+  // Re-render when the UI language changes.
+  const langSel = document.getElementById('ui-lang-select');
+  if (langSel) langSel.addEventListener('change', () => setTimeout(render, 0));
+
+  claimFromUrl().then(playInit).then(refresh);
+})();
 </script>
 </body>
 </html>

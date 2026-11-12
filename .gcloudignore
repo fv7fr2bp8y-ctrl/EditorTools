@@ -1,0 +1,11 @@
+.git
+.gitignore
+hf-space/
+store-assets/
+__pycache__/
+*.db
+quota.json
+.DS_Store
+deploy_hf.sh
+hf_deploy.py
+cloudflare-worker.js

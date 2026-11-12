@@ -1,0 +1,9 @@
+name = "editortools-proxy"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+account_id = "11656c21c96c08ac7a98ad1dd3dbe9fd"
+workers_dev = false
+
+routes = [
+  { pattern = "www.editortools.online", custom_domain = true }
+]

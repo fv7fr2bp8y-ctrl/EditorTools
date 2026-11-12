@@ -1,4 +1,4 @@
-const CACHE_NAME = 'editortools-v12';
+const CACHE_NAME = 'editortools-v13';
 const CORE_ASSETS = ['/', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -20,7 +20,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   // Никога не кеширай API повикванията — винаги мрежа
-  if (['/transcribe', '/tts', '/stream'].some((p) => url.pathname.startsWith(p))) {
+  if (['/transcribe', '/tts', '/stream', '/pro', '/track', '/stats'].some((p) => url.pathname.startsWith(p))) {
+    return;
+  }
+  // The page itself: network first so updates show up at once; cache only when offline.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put('/', copy));
+          return res;
+        })
+        .catch(() => caches.match('/'))
+    );
     return;
   }
   event.respondWith(

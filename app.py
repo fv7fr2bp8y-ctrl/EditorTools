@@ -29,12 +29,15 @@ async def security_headers(request: Request, call_next):
     return resp
 
 
-# Persistent data dir (Railway volume mounts at /data; falls back to local dir)
+# Data dir (/data in the container; persisted to GCS by persist.py when PERSIST_BUCKET is set)
 DATA_DIR = Path(os.environ.get("DATA_DIR", str(Path(__file__).parent)))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-DAILY_TRANSCRIBE_LIMIT = 20
-DAILY_TTS_LIMIT = 10
+DAILY_TRANSCRIBE_LIMIT = 3
+DAILY_TTS_LIMIT = 3
+# EditorTools Pro (1.99 €/month): fair-use daily limits per subscriber
+PRO_TRANSCRIBE_LIMIT = 100
+PRO_TTS_LIMIT = 100
 QUOTA_FILE = DATA_DIR / "quota.json"
 quota_lock = threading.Lock()
 
@@ -57,7 +60,17 @@ def init_analytics():
         db.execute("CREATE INDEX IF NOT EXISTS idx_event ON events(event)")
 
 
+# Cloud Run wipes the disk on restart: keep the data files in a GCS bucket.
+import atexit
+import persist
+import pro
+PRO_DB = DATA_DIR / "pro.db"
+persist.restore(QUOTA_FILE, ANALYTICS_DB, PRO_DB)
 init_analytics()
+pro.init(DATA_DIR)
+app.include_router(pro.router)
+persist.start(QUOTA_FILE, ANALYTICS_DB, PRO_DB)
+atexit.register(persist.sync, QUOTA_FILE, ANALYTICS_DB, PRO_DB)
 
 
 def hash_ip(ip: str, day: str) -> str:
@@ -125,6 +138,17 @@ def save_quota(data: dict):
         QUOTA_FILE.write_text(json.dumps(data))
     except Exception:
         pass
+
+
+def check_quota(request: Request, kind: str):
+    """Free users are counted per IP, Pro subscribers per subscription token."""
+    token = request.headers.get("x-pro-token", "")
+    if pro.is_pro(token):
+        limit = PRO_TRANSCRIBE_LIMIT if kind == "transcribe" else PRO_TTS_LIMIT
+        check_and_increment("pro:" + token, kind, limit)
+    else:
+        limit = DAILY_TRANSCRIBE_LIMIT if kind == "transcribe" else DAILY_TTS_LIMIT
+        check_and_increment(get_client_ip(request), kind, limit)
 
 
 def check_and_increment(ip: str, kind: str, limit: int):
@@ -243,7 +267,7 @@ async def transcribe(
 ):
     import uuid
 
-    check_and_increment(get_client_ip(request), "transcribe", DAILY_TRANSCRIBE_LIMIT)
+    check_quota(request, "transcribe")
     log_event(request, "transcribe", ui_lang=language, extra=model)
 
     job_id = uuid.uuid4().hex
@@ -353,7 +377,7 @@ async def tts(request: Request, text: str = Form(...), voice: str = Form(TTS_VOI
     if cache_key in tts_cache:
         return Response(content=tts_cache[cache_key], media_type="audio/wav")
 
-    check_and_increment(get_client_ip(request), "tts", DAILY_TTS_LIMIT)
+    check_quota(request, "tts")
     log_event(request, "tts", extra=voice)
 
     # Gemini понякога връща текст вместо аудио — до 4 опита свеждат провала под ~2%
