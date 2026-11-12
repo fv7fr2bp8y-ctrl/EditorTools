@@ -29,6 +29,8 @@ _gtoken = {"value": "", "exp": 0.0}
 ACTIVE = {"active", "trialing", "past_due"}
 
 router = APIRouter(prefix="/pro")
+# Set by app.py to its anonymous analytics logger: on_event(request, name, extra=...)
+on_event = lambda request, name, extra="": None
 _lock = threading.Lock()
 DB: Path = Path("pro.db")
 
@@ -137,11 +139,12 @@ async def checkout(request: Request):
                 cancel_url=f"{SITE}/?pro_cancel=1",
                 locale="bg" if lang == "bg" else "auto",
                 allow_promotion_codes="true")
+    on_event(request, "pro_checkout_start", extra="stripe")
     return {"url": s["url"]}
 
 
 @router.get("/claim")
-async def claim(session_id: str):
+async def claim(request: Request, session_id: str):
     """After Stripe Checkout: turn a paid session into a Pro token (idempotent)."""
     if not session_id.startswith("cs_"):
         raise HTTPException(400, "Невалидна сесия.")
@@ -160,6 +163,8 @@ async def claim(session_id: str):
                       ON CONFLICT(subscription) DO UPDATE SET status=excluded.status,
                       period_end=excluded.period_end, checked_at=excluded.checked_at""",
                    (token, email, s.get("customer"), sub_id, status, end, now, now))
+    if not row:  # count each subscription once, not every reload of the success page
+        on_event(request, "pro_paid", extra="stripe")
     return {"token": token, "email": email, "active": status in ACTIVE, "period_end": end}
 
 
@@ -204,4 +209,6 @@ async def play_claim(request: Request):
                       ON CONFLICT(subscription) DO UPDATE SET status=excluded.status,
                       period_end=excluded.period_end, checked_at=excluded.checked_at""",
                    (token, "", purchase_token, sub_id, status, end, now, now))
+    if not row and status in ACTIVE:
+        on_event(request, "pro_paid", extra="play")
     return {"token": token, "active": status in ACTIVE, "period_end": end}

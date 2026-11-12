@@ -32,7 +32,8 @@ export default {
     const isHead = request.method === "HEAD";
     // The page, the service worker and the manifest must never come from Cloudflare's cache,
     // or visitors keep an old version of the site for hours.
-    const fresh = ["/", "/sw.js", "/manifest.json", "/index.html"].includes(incoming.pathname);
+    const fresh = ["/", "/sw.js", "/manifest.json", "/index.html", "/robots.txt", "/sitemap.xml"]
+      .includes(incoming.pathname) || incoming.pathname.startsWith("/bg/");
     if (fresh) target.searchParams.set("_fresh", Date.now().toString());
     const proxied = new Request(target.toString(), {
       ...(fresh ? { cache: "no-store" } : {}),

@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EditorTools — Аудио и видео в текст</title>
+<meta name="description" content="Аудио и видео в текст на български и още 7 езика, SRT субтитри и озвучаване на текст с изкуствен интелект. Безплатно, без регистрация.">
+<link rel="canonical" href="https://www.editortools.online/">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#5B4BE8">
 <link rel="icon" href="/icons/icon-192.png?v=2">
@@ -639,6 +641,7 @@
       <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.3c-.3.2-.5.6-.5 1.1v17.2c0 .5.2.9.5 1.1l.1.1L13.4 12v-.1L3.7 2.2l-.1.1z" fill="#00D0FF"/><path d="M17 15.3 13.4 12v-.1l3.6-3.3.1.1 4.3 2.4c1.2.7 1.2 1.8 0 2.5L17.1 15.2l-.1.1z" fill="#FFD500"/><path d="M17.1 15.2 13.4 12 3.6 21.7c.4.4 1 .5 1.8.1l11.7-6.6" fill="#FF3A44"/><path d="M17.1 8.8 5.4 2.2c-.8-.4-1.4-.4-1.8.1L13.4 12l3.7-3.2z" fill="#00E676"/></svg>
       <span class="play-badge-text"><span class="play-badge-top">Вземи го от</span><span class="play-badge-name">Google Play</span></span>
     </a>
+    <p class="footer-meta footer-links"><a href="/bg/audio-v-tekst">Аудио в текст</a> · <a href="/bg/subtitri-ot-video">Субтитри от видео</a> · <a href="/bg/tekst-v-govor">Текст в говор</a></p>
     <p class="footer-meta">© 2026 EditorTools. <span id="footer-rights">Всички права запазени.</span> · <a href="mailto:support@editortools.online">support@editortools.online</a></p>
   </footer>
 </div>
@@ -1561,7 +1564,7 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ---------- Privacy-friendly analytics ---------- */
-function track(event, extra) {
+function track(event, extra, more) {
   try {
     const fd = new FormData();
     fd.append('event', event);
@@ -1570,11 +1573,15 @@ function track(event, extra) {
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
     fd.append('country', tz);
     if (extra) fd.append('extra', extra);
+    if (more) Object.keys(more).forEach(k => fd.append(k, more[k] || ''));
     fetch('/track', { method: 'POST', body: fd, keepalive: true }).catch(() => {});
   } catch (e) {}
 }
 if (!new URLSearchParams(location.search).get('demo')) {
-  track('pageview');
+  // Source of the visit (referrer domain + utm tags) and landing page; no cookies.
+  const q = new URLSearchParams(location.search);
+  track('pageview', '', { path: location.pathname, ref: document.referrer,
+    utm_source: q.get('utm_source'), utm_medium: q.get('utm_medium'), utm_campaign: q.get('utm_campaign') });
 }
 
 applyI18n();
@@ -1684,7 +1691,14 @@ if (new URLSearchParams(location.search).get('demo') === '1') {
     $('pro-modal-close').textContent = l.later;
     $('pro-modal-buy').textContent = inApp ? l.buy.replace(/1,99\s?€|€1\.99/, play.price) : l.buy;
   }
-  function openModal() { render(); $('pro-modal').classList.add('show'); }
+  function openModal() { render(); $('pro-modal').classList.add('show'); track('pro_view', 'limit'); }
+  // The Pro card counts as seen once it scrolls into view (once per page load).
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => {
+      if (es.some(e => e.isIntersecting) && !state.active) { track('pro_view', 'card'); io.disconnect(); }
+    }, { threshold: 0.6 });
+    io.observe($('pro-card'));
+  }
   function closeModal() { $('pro-modal').classList.remove('show'); }
 
   // ----- Google Play Billing (Digital Goods API) inside the Android app -----
@@ -1710,6 +1724,7 @@ if (new URLSearchParams(location.search).get('demo') === '1') {
     store.set(PRO_KEY, j.token);
   }
   async function playBuy() {
+    track('pro_checkout_start', 'play');
     const req = new PaymentRequest([{ supportedMethods: PLAY_SERVICE, data: { sku: PLAY_SKU } }],
       { total: { label: 'EditorTools Pro', amount: { currency: 'EUR', value: '0' } } });
     const resp = await req.show();

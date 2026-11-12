@@ -8,6 +8,7 @@ import threading
 import re
 import sqlite3
 import hashlib
+from html import escape as html_escape
 from datetime import date, datetime, timezone
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
@@ -58,17 +59,25 @@ def init_analytics():
         )""")
         db.execute("CREATE INDEX IF NOT EXISTS idx_day ON events(day)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_event ON events(event)")
+        # Where the visit came from (filled on pageviews only).
+        cols = {r[1] for r in db.execute("PRAGMA table_info(events)")}
+        for col in ("source", "medium", "campaign", "landing"):
+            if col not in cols:
+                db.execute(f"ALTER TABLE events ADD COLUMN {col} TEXT DEFAULT ''")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_visit ON events(day, ip_hash)")
 
 
 # Cloud Run wipes the disk on restart: keep the data files in a GCS bucket.
 import atexit
 import persist
 import pro
+import seo
 PRO_DB = DATA_DIR / "pro.db"
 persist.restore(QUOTA_FILE, ANALYTICS_DB, PRO_DB)
 init_analytics()
 pro.init(DATA_DIR)
 app.include_router(pro.router)
+app.include_router(seo.router)
 persist.start(QUOTA_FILE, ANALYTICS_DB, PRO_DB)
 atexit.register(persist.sync, QUOTA_FILE, ANALYTICS_DB, PRO_DB)
 
@@ -98,7 +107,8 @@ def parse_ua(ua: str):
     return device, browser
 
 
-def log_event(request: Request, event: str, ui_lang: str = "", country: str = "", extra: str = ""):
+def log_event(request: Request, event: str, ui_lang: str = "", country: str = "", extra: str = "",
+              source: str = "", medium: str = "", campaign: str = "", landing: str = ""):
     try:
         ip = get_client_ip(request)
         day = date.today().isoformat()
@@ -109,12 +119,46 @@ def log_event(request: Request, event: str, ui_lang: str = "", country: str = ""
                        or request.headers.get("x-vercel-ip-country") or "")
         with analytics_lock, sqlite3.connect(ANALYTICS_DB) as db:
             db.execute(
-                "INSERT INTO events (ts,day,event,ip_hash,country,device,browser,ui_lang,extra) "
-                "VALUES (?,?,?,?,?,?,?,?,?)",
-                (ts, day, event, hash_ip(ip, day), country, device, browser, ui_lang, extra),
+                "INSERT INTO events (ts,day,event,ip_hash,country,device,browser,ui_lang,extra,"
+                "source,medium,campaign,landing) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (ts, day, event, hash_ip(ip, day), country, device, browser, ui_lang, extra[:120],
+                 source, medium, campaign, landing),
             )
     except Exception:
         pass
+
+
+SEARCH = ("google", "bing", "duckduckgo", "yahoo", "yandex", "ecosia", "brave", "baidu", "qwant")
+SOCIAL = {"facebook": "facebook", "fb": "facebook", "instagram": "instagram", "t.co": "x",
+          "twitter": "x", "x.com": "x", "linkedin": "linkedin", "lnkd": "linkedin",
+          "youtube": "youtube", "tiktok": "tiktok", "reddit": "reddit", "pinterest": "pinterest",
+          "threads": "threads", "viber": "viber", "telegram": "telegram", "whatsapp": "whatsapp"}
+
+
+def classify_source(ref: str, utm_source: str, utm_medium: str) -> tuple[str, str]:
+    """(source, medium) of a visit: utm tags first, then the referrer's domain."""
+    from urllib.parse import urlparse
+    clean = lambda v: re.sub(r"[^\w.\-]+", "_", (v or "").strip().lower())[:40]
+    if utm_source:
+        return clean(utm_source), clean(utm_medium) or "(няма)"
+    if not ref:
+        return "(директно)", "(няма)"
+    if ref.startswith("android-app://"):
+        return "android-app", "app"
+    host = (urlparse(ref).hostname or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if not host:
+        return "(директно)", "(няма)"
+    if host.endswith("editortools.online") or host.endswith(".run.app") or host in ("localhost", "127.0.0.1"):
+        return "(вътрешно)", "(няма)"
+    for name in SEARCH:
+        if host == name or host.startswith(name + ".") or f".{name}." in host:
+            return name, "organic"
+    for key, name in SOCIAL.items():
+        if host == key or host.startswith(key + ".") or f".{key}." in host or host.endswith("." + key):
+            return name, "social"
+    return clean(host), "referral"
 
 
 def get_client_ip(request: Request) -> str:
@@ -401,12 +445,27 @@ async def index():
         return f.read()
 
 
+pro.on_event = log_event
+
+TRACK_EVENTS = {"pageview", "live", "download", "copy", "read_all", "seo_cta",
+                "pro_view", "pro_checkout_start"}
+
+
 @app.post("/track")
 async def track(request: Request, event: str = Form(...), ui_lang: str = Form(""),
-                country: str = Form(""), extra: str = Form("")):
-    allowed = {"pageview", "live", "download", "copy", "read_all"}
-    if event in allowed:
-        log_event(request, event, ui_lang=ui_lang, country=country, extra=extra)
+                country: str = Form(""), extra: str = Form(""), path: str = Form(""),
+                ref: str = Form(""), utm_source: str = Form(""), utm_medium: str = Form(""),
+                utm_campaign: str = Form("")):
+    if event not in TRACK_EVENTS:
+        return {"ok": True}
+    landing = re.sub(r"[^\w/\-.]", "", path)[:80]
+    if event == "pageview":
+        source, medium = classify_source(ref[:300], utm_source, utm_medium)
+        campaign = re.sub(r"[^\w.\-]+", "_", utm_campaign.strip().lower())[:60]
+        log_event(request, event, ui_lang=ui_lang, country=country, extra=extra,
+                  source=source, medium=medium, campaign=campaign, landing=landing or "/")
+    else:
+        log_event(request, event, ui_lang=ui_lang, country=country, extra=extra, landing=landing)
     return {"ok": True}
 
 
@@ -434,17 +493,75 @@ async def stats(request: Request, key: str = ""):
         by_country = q("SELECT country, COUNT(DISTINCT ip_hash) n FROM events WHERE event='pageview' AND country<>'' GROUP BY country ORDER BY n DESC LIMIT 15")
         feat = {k: totals.get(k, 0) for k in ("transcribe", "tts", "live", "download", "copy", "read_all")}
 
+        # A visit = one visitor on one day (ip_hash is salted per day, no cookies).
+        # Its source and landing page come from that day's first pageview.
+        visits_sql = """
+            WITH first AS (
+              SELECT day, ip_hash, MIN(id) id FROM events WHERE event='pageview' GROUP BY day, ip_hash),
+            v AS (
+              SELECT f.day, f.ip_hash,
+                     COALESCE(NULLIF(e.source,''),'(няма данни)') source,
+                     COALESCE(NULLIF(e.medium,''),'') medium,
+                     COALESCE(NULLIF(e.landing,''),'(няма данни)') landing,
+                     EXISTS(SELECT 1 FROM events x WHERE x.day=f.day AND x.ip_hash=f.ip_hash
+                            AND x.event IN ('transcribe','tts')) used,
+                     EXISTS(SELECT 1 FROM events x WHERE x.day=f.day AND x.ip_hash=f.ip_hash
+                            AND x.event='pro_view') pv,
+                     EXISTS(SELECT 1 FROM events x WHERE x.day=f.day AND x.ip_hash=f.ip_hash
+                            AND x.event='pro_checkout_start') co,
+                     EXISTS(SELECT 1 FROM events x WHERE x.day=f.day AND x.ip_hash=f.ip_hash
+                            AND x.event='pro_paid') paid
+              FROM first f JOIN events e ON e.id=f.id)
+        """
+        def by(col):
+            return q(visits_sql + f"SELECT {col} k, COUNT(*) n, SUM(used) used, SUM(pv) pv, "
+                     f"SUM(co) co, SUM(paid) paid FROM v GROUP BY {col} ORDER BY n DESC LIMIT 25")
+        by_source = by("source || CASE WHEN medium NOT IN ('','(няма)') THEN ' / ' || medium ELSE '' END")
+        by_landing = by("landing")
+        by_campaign = q("SELECT campaign k, COUNT(DISTINCT day||ip_hash) n FROM events "
+                        "WHERE event='pageview' AND campaign<>'' GROUP BY campaign ORDER BY n DESC LIMIT 15")
+        fv = q(visits_sql + "SELECT COUNT(*) n, COALESCE(SUM(used),0) used, COALESCE(SUM(pv),0) pv, "
+               "COALESCE(SUM(co),0) co FROM v")[0]
+        # Paid is counted once per subscription (it may land on another day than the visit).
+        fv["paid"] = totals.get("pro_paid", 0)
+        seo_cta = q("SELECT extra k, COUNT(*) n FROM events WHERE event='seo_cta' GROUP BY extra ORDER BY n DESC")
+
     def rows(data, k1, k2):
         if not data: return "<tr><td colspan=2 style='color:#8E8AA4'>—</td></tr>"
         mx = max((r[k2] for r in data), default=1) or 1
         out = ""
         for r in data:
-            label = r[k1] or "—"
+            label = html_escape(str(r[k1] or "—"))
             n = r[k2]
             w = int(100 * n / mx)
             out += (f"<tr><td>{label}</td><td><div class='bar'><div class='barfill' "
                     f"style='width:{w}%'></div><span>{n}</span></div></td></tr>")
         return out
+
+    def pct(a, b):
+        return f"{100 * a / b:.0f}%" if b else "·"
+
+    funnel_steps = [("Посещения", fv["n"]), ("Транскрипция или озвучаване", fv["used"]),
+                    ("Видели Pro", fv["pv"]), ("Започнали плащане", fv["co"]), ("Платили", fv["paid"])]
+    top = funnel_steps[0][1] or 1
+    funnel_html = ""
+    prev = None
+    for label, n in funnel_steps:
+        w = max(int(100 * n / top), 1 if n else 0)
+        step = f" · {pct(n, prev)} от предишната" if prev is not None else ""
+        funnel_html += (f"<tr><td>{label}</td><td><div class='bar'><div class='barfill' style='width:{w}%'></div>"
+                        f"<span>{n}{step}</span></div></td></tr>")
+        prev = n
+
+    def attr_rows(data):
+        if not data:
+            return "<tr><td colspan=6 style='color:#8E8AA4'>Няма данни още</td></tr>"
+        return "".join(
+            f"<tr><td>{html_escape(str(r['k']))}</td><td>{r['n']}</td><td>{r['used']}</td>"
+            f"<td>{r['pv']}</td><td>{r['co']}</td><td>{r['paid']}</td></tr>" for r in data)
+
+    attr_head = ("<thead><tr><th>{}</th><th>Посещения</th><th>Ползвали</th><th>Pro видян</th>"
+                 "<th>Плащане</th><th>Платили</th></tr></thead>")
 
     day_rows = "".join(
         f"<tr><td>{r['day']}</td><td>{r['views']}</td><td>{r['uniq']}</td></tr>" for r in by_day
@@ -472,6 +589,8 @@ async def stats(request: Request, key: str = ""):
   .bar {{ position:relative; background:rgba(255,255,255,.05); border-radius:6px; height:22px; display:flex; align-items:center; }}
   .barfill {{ position:absolute; left:0; top:0; height:100%; background:linear-gradient(90deg,#5B4BE8,#7C6BFF); border-radius:6px; }}
   .bar span {{ position:relative; padding-left:8px; font-size:.8rem; font-weight:600; }}
+  .scroll {{ overflow-x:auto; }}
+  .scroll td:not(:first-child), .scroll th:not(:first-child) {{ text-align:right; }}
   .grid2 {{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }}
   @media(max-width:640px){{ .grid2{{grid-template-columns:1fr}} }}
 </style></head><body><div class="wrap">
@@ -489,6 +608,16 @@ async def stats(request: Request, key: str = ""):
     <div class="card"><div class="n">{feat['tts']}</div><div class="l">TTS генерации</div></div>
     <div class="card"><div class="n">{feat['live']}</div><div class="l">Live записи</div></div>
     <div class="card"><div class="n">{feat['download']}</div><div class="l">Изтегляния</div></div>
+  </div>
+  <h2>🔻 Фуния (посетител на ден)</h2>
+  <table><tbody>{funnel_html}</tbody></table>
+  <h2>🧭 По източник</h2>
+  <div class="scroll"><table>{attr_head.format('Източник')}<tbody>{attr_rows(by_source)}</tbody></table></div>
+  <h2>🚪 По входна страница</h2>
+  <div class="scroll"><table>{attr_head.format('Страница')}<tbody>{attr_rows(by_landing)}</tbody></table></div>
+  <div class="grid2">
+    <div><h2>🏷 Кампании (utm_campaign)</h2><table><tbody>{rows(by_campaign,'k','n')}</tbody></table></div>
+    <div><h2>👉 Бутон към инструмента от SEO страница</h2><table><tbody>{rows(seo_cta,'k','n')}</tbody></table></div>
   </div>
   <div class="grid2">
     <div><h2>📱 Устройство</h2><table><tbody>{rows(by_device,'device','n')}</tbody></table></div>

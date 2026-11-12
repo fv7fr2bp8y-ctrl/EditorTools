@@ -1,4 +1,4 @@
-const CACHE_NAME = 'editortools-v13';
+const CACHE_NAME = 'editortools-v14';
 const CORE_ASSETS = ['/', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -23,16 +23,20 @@ self.addEventListener('fetch', (event) => {
   if (['/transcribe', '/tts', '/stream', '/pro', '/track', '/stats'].some((p) => url.pathname.startsWith(p))) {
     return;
   }
-  // The page itself: network first so updates show up at once; cache only when offline.
+  // Pages: network first so updates show up at once; cache only when offline.
+  // Each page is cached under its own path, so /bg/... never replaces the tool at '/'.
   if (event.request.mode === 'navigate') {
+    const key = url.pathname;
     event.respondWith(
       fetch(event.request)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put('/', copy));
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(key, copy));
+          }
           return res;
         })
-        .catch(() => caches.match('/'))
+        .catch(() => caches.match(key).then((r) => r || caches.match('/')))
     );
     return;
   }
