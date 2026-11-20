@@ -235,7 +235,13 @@ def render(slug: str) -> str:
 <meta property="og:title" content="{_e(p['h1'])} | EditorTools">
 <meta property="og:description" content="{_e(p['desc'])}">
 <meta property="og:url" content="{url}">
-<meta property="og:image" content="{SITE}/icons/icon-512.png">
+<meta property="og:image" content="{SITE}/icons/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{_e(p['h1'])} | EditorTools">
+<meta name="twitter:description" content="{_e(p['desc'])}">
+<meta name="twitter:image" content="{SITE}/icons/og-image.png">
 <meta name="theme-color" content="#5B4BE8">
 <link rel="icon" href="/icons/icon-192.png?v=2">
 <link rel="apple-touch-icon" href="/icons/icon-192.png?v=2">
