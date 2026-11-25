@@ -260,10 +260,46 @@ def to_plain(segments: list) -> str:
     return "\n".join(seg["text"].strip() for seg in segments)
 
 
-def run_transcription(job_id: str, audio_path: str, model_name: str, language: str | None, word_ts: bool):
+# Small models stay in memory so the next file starts at once; big ones load per job.
+_models: dict = {}
+_models_lock = threading.Lock()
+KEEP_LOADED = {"tiny", "base", "small"}
+
+
+def get_model(name: str):
+    from faster_whisper import WhisperModel
+    if name not in KEEP_LOADED:
+        return WhisperModel(name, device="cpu", compute_type="int8")
+    with _models_lock:
+        if name not in _models:
+            _models[name] = WhisperModel(name, device="cpu", compute_type="int8")
+        return _models[name]
+
+
+# Warm the default model while the container starts.
+threading.Thread(target=lambda: get_model("small"), daemon=True).start()
+
+# The "try a sample" recording: free, does not use the daily limit.
+SAMPLE_FILE = Path(__file__).parent / "sample" / "primer-bg.mp3"
+SAMPLE_SHA = hashlib.sha256(SAMPLE_FILE.read_bytes()).hexdigest() if SAMPLE_FILE.exists() else ""
+# Example texts prefilled in the text-to-speech box (same strings as in index.html).
+SAMPLE_TTS_TEXTS = {
+    "Здравей! Това е примерен глас от EditorTools. Изтрий този текст, постави своя и натисни бутона, за да го чуеш.",
+    "Hi! This is a sample voice from EditorTools. Delete this text, paste your own and press the button to hear it.",
+    "Hallo! Das ist eine Beispielstimme von EditorTools. Lösche diesen Text, füge deinen eigenen ein und drücke den Knopf, um ihn zu hören.",
+    "Bonjour ! Voici une voix d’exemple d’EditorTools. Efface ce texte, colle le tien et appuie sur le bouton pour l’écouter.",
+    "¡Hola! Esta es una voz de ejemplo de EditorTools. Borra este texto, pega el tuyo y pulsa el botón para escucharlo.",
+}
+
+
+# Finished sample transcriptions, reused so the demo is instant and costs no CPU.
+sample_results: dict[tuple, dict] = {}
+
+
+def run_transcription(job_id: str, audio_path: str, model_name: str, language: str | None, word_ts: bool,
+                      sample_key: tuple | None = None):
     try:
-        from faster_whisper import WhisperModel
-        model = WhisperModel(model_name, device="cpu", compute_type="int8")
+        model = get_model(model_name)
         segments_gen, info = model.transcribe(
             audio_path,
             language=language,
@@ -288,6 +324,9 @@ def run_transcription(job_id: str, audio_path: str, model_name: str, language: s
                     for w in seg.words
                 ]
             jobs[job_id]["segments"].append(segment_data)
+        if sample_key:
+            sample_results[sample_key] = {"segments": list(jobs[job_id]["segments"]),
+                                          "info": dict(jobs[job_id]["info"])}
     except Exception as e:
         jobs[job_id]["error"] = str(e)
     finally:
@@ -311,13 +350,15 @@ async def transcribe(
 ):
     import uuid
 
-    check_quota(request, "transcribe")
-    log_event(request, "transcribe", ui_lang=language, extra=model)
+    content = await file.read()
+    is_sample = bool(SAMPLE_SHA) and hashlib.sha256(content).hexdigest() == SAMPLE_SHA
+    if not is_sample:
+        check_quota(request, "transcribe")
+    log_event(request, "transcribe", ui_lang=language, extra=("sample:" if is_sample else "") + model)
 
     job_id = uuid.uuid4().hex
     suffix = Path(file.filename or "audio").suffix or ".tmp"
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    content = await file.read()
     if len(content) > MAX_FILE_MB * 1024 * 1024:
         from fastapi import HTTPException
         raise HTTPException(413, f"Файлът е по-голям от {MAX_FILE_MB}MB")
@@ -327,10 +368,17 @@ async def transcribe(
     lang = language if language else None
     word_ts = word_timestamps.lower() == "true"
 
+    sample_key = (model, word_ts) if is_sample else None  # the sample is always Bulgarian
+    if sample_key and sample_key in sample_results:
+        cached = sample_results[sample_key]
+        os.unlink(tmp.name)
+        jobs[job_id] = {"segments": list(cached["segments"]), "done": True, "error": None,
+                        "info": dict(cached["info"])}
+        return {"job_id": job_id}
     jobs[job_id] = {"segments": [], "done": False, "error": None, "info": {}}
     t = threading.Thread(
         target=run_transcription,
-        args=(job_id, tmp.name, model, lang, word_ts),
+        args=(job_id, tmp.name, model, lang, word_ts, sample_key),
         daemon=True,
     )
     t.start()
@@ -421,8 +469,10 @@ async def tts(request: Request, text: str = Form(...), voice: str = Form(TTS_VOI
     if cache_key in tts_cache:
         return Response(content=tts_cache[cache_key], media_type="audio/wav")
 
-    check_quota(request, "tts")
-    log_event(request, "tts", extra=voice)
+    is_sample = text in SAMPLE_TTS_TEXTS
+    if not is_sample:
+        check_quota(request, "tts")
+    log_event(request, "tts", extra=("sample:" if is_sample else "") + voice)
 
     # Gemini понякога връща текст вместо аудио — до 4 опита свеждат провала под ~2%
     result = None
@@ -448,7 +498,7 @@ async def index():
 pro.on_event = log_event
 
 TRACK_EVENTS = {"pageview", "live", "download", "copy", "read_all", "seo_cta",
-                "pro_view", "pro_checkout_start"}
+                "pro_view", "pro_checkout_start", "try", "result", "slow_start"}
 
 
 @app.post("/track")
@@ -504,7 +554,9 @@ async def stats(request: Request, key: str = ""):
                      COALESCE(NULLIF(e.medium,''),'') medium,
                      COALESCE(NULLIF(e.landing,''),'(няма данни)') landing,
                      EXISTS(SELECT 1 FROM events x WHERE x.day=f.day AND x.ip_hash=f.ip_hash
-                            AND x.event IN ('transcribe','tts')) used,
+                            AND x.event IN ('try','transcribe','tts')) used,
+                     EXISTS(SELECT 1 FROM events x WHERE x.day=f.day AND x.ip_hash=f.ip_hash
+                            AND x.event='result') res,
                      EXISTS(SELECT 1 FROM events x WHERE x.day=f.day AND x.ip_hash=f.ip_hash
                             AND x.event='pro_view') pv,
                      EXISTS(SELECT 1 FROM events x WHERE x.day=f.day AND x.ip_hash=f.ip_hash
@@ -515,15 +567,18 @@ async def stats(request: Request, key: str = ""):
         """
         def by(col):
             return q(visits_sql + f"SELECT {col} k, COUNT(*) n, SUM(used) used, SUM(pv) pv, "
-                     f"SUM(co) co, SUM(paid) paid FROM v GROUP BY {col} ORDER BY n DESC LIMIT 25")
+                     f"SUM(res) res, SUM(co) co, SUM(paid) paid FROM v GROUP BY {col} ORDER BY n DESC LIMIT 25")
         by_source = by("source || CASE WHEN medium NOT IN ('','(няма)') THEN ' / ' || medium ELSE '' END")
         by_landing = by("landing")
         by_campaign = q("SELECT campaign k, COUNT(DISTINCT day||ip_hash) n FROM events "
                         "WHERE event='pageview' AND campaign<>'' GROUP BY campaign ORDER BY n DESC LIMIT 15")
         fv = q(visits_sql + "SELECT COUNT(*) n, COALESCE(SUM(used),0) used, COALESCE(SUM(pv),0) pv, "
-               "COALESCE(SUM(co),0) co FROM v")[0]
+               "COALESCE(SUM(co),0) co, COALESCE(SUM(res),0) res FROM v")[0]
         # Paid is counted once per subscription (it may land on another day than the visit).
         fv["paid"] = totals.get("pro_paid", 0)
+        # Where trials start and where they stop (client events: try / result / slow_start).
+        steps = q("SELECT event || ' · ' || extra k, COUNT(DISTINCT day||ip_hash) n FROM events "
+                  "WHERE event IN ('try','result','slow_start') GROUP BY event, extra ORDER BY event DESC, n DESC")
         seo_cta = q("SELECT extra k, COUNT(*) n FROM events WHERE event='seo_cta' GROUP BY extra ORDER BY n DESC")
 
     def rows(data, k1, k2):
@@ -541,8 +596,8 @@ async def stats(request: Request, key: str = ""):
     def pct(a, b):
         return f"{100 * a / b:.0f}%" if b else "·"
 
-    funnel_steps = [("Посещения", fv["n"]), ("Транскрипция или озвучаване", fv["used"]),
-                    ("Видели Pro", fv["pv"]), ("Започнали плащане", fv["co"]), ("Платили", fv["paid"])]
+    funnel_steps = [("Посещения", fv["n"]), ("Пробвали (файл, пример или текст)", fv["used"]),
+                    ("Получили резултат", fv["res"]), ("Видели Pro", fv["pv"]), ("Започнали плащане", fv["co"]), ("Платили", fv["paid"])]
     top = funnel_steps[0][1] or 1
     funnel_html = ""
     prev = None
@@ -555,12 +610,12 @@ async def stats(request: Request, key: str = ""):
 
     def attr_rows(data):
         if not data:
-            return "<tr><td colspan=6 style='color:#8E8AA4'>Няма данни още</td></tr>"
+            return "<tr><td colspan=7 style='color:#8E8AA4'>Няма данни още</td></tr>"
         return "".join(
             f"<tr><td>{html_escape(str(r['k']))}</td><td>{r['n']}</td><td>{r['used']}</td>"
-            f"<td>{r['pv']}</td><td>{r['co']}</td><td>{r['paid']}</td></tr>" for r in data)
+            f"<td>{r['res']}</td><td>{r['pv']}</td><td>{r['co']}</td><td>{r['paid']}</td></tr>" for r in data)
 
-    attr_head = ("<thead><tr><th>{}</th><th>Посещения</th><th>Ползвали</th><th>Pro видян</th>"
+    attr_head = ("<thead><tr><th>{}</th><th>Посещения</th><th>Пробвали</th><th>Резултат</th><th>Pro видян</th>"
                  "<th>Плащане</th><th>Платили</th></tr></thead>")
 
     day_rows = "".join(
@@ -611,6 +666,9 @@ async def stats(request: Request, key: str = ""):
   </div>
   <h2>🔻 Фуния (посетител на ден)</h2>
   <table><tbody>{funnel_html}</tbody></table>
+  <h2>🧪 Стъпки на пробата (посетители)</h2>
+  <table><tbody>{rows(steps,'k','n')}</tbody></table>
+  <div class="sub" style="margin-top:6px">try = започнал (file, sample, tts) · result = получил резултат · slow_start = чакал над 8 секунди</div>
   <h2>🧭 По източник</h2>
   <div class="scroll"><table>{attr_head.format('Източник')}<tbody>{attr_rows(by_source)}</tbody></table></div>
   <h2>🚪 По входна страница</h2>
@@ -633,6 +691,7 @@ async def stats(request: Request, key: str = ""):
     return html
 
 
+app.mount("/sample", StaticFiles(directory=Path(__file__).parent / "sample"), name="sample")
 app.mount("/icons", StaticFiles(directory=Path(__file__).parent / "icons"), name="icons")
 
 

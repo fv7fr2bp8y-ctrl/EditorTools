@@ -13,6 +13,7 @@ RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small', de
 
 COPY app.py persist.py pro.py seo.py index.html manifest.json sw.js privacy.html ./
 COPY icons ./icons
+COPY sample ./sample
 COPY .well-known ./.well-known
 
 # Hugging Face Spaces маршрутизира към този порт; DATA_DIR е записваем в контейнера
