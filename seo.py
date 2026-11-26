@@ -224,6 +224,7 @@ def render(slug: str) -> str:
     return f"""<!DOCTYPE html>
 <html lang="bg"><head>
 <meta charset="UTF-8">
+<script src="/consent.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{_e(p['title'])}</title>
 <meta name="description" content="{_e(p['desc'])}">
@@ -274,6 +275,7 @@ def render(slug: str) -> str:
   <div class="more">{more}</div>
 </main>
 <footer>© 2026 EditorTools · <a href="/privacy.html">Поверителност</a> ·
+<a href="#" onclick="etConsentOpen();return false">Бисквитки</a> ·
 <a href="mailto:support@editortools.online">support@editortools.online</a></footer>
 </div>
 <script>{TRACK_JS}</script>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'editortools-v14';
+const CACHE_NAME = 'editortools-v15';
 const CORE_ASSETS = ['/', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -19,6 +19,8 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  // Other sites (Google Analytics, fonts): leave to the browser.
+  if (url.origin !== self.location.origin) return;
   // Никога не кеширай API повикванията — винаги мрежа
   if (['/transcribe', '/tts', '/stream', '/pro', '/track', '/stats'].some((p) => url.pathname.startsWith(p))) {
     return;

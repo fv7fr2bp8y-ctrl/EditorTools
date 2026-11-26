@@ -700,6 +700,11 @@ async def manifest():
     return FileResponse(Path(__file__).parent / "manifest.json", media_type="application/manifest+json")
 
 
+@app.get("/consent.js")
+async def consent_js():
+    return FileResponse(Path(__file__).parent / "consent.js", media_type="application/javascript")
+
+
 @app.get("/sw.js")
 async def service_worker():
     return FileResponse(Path(__file__).parent / "sw.js", media_type="application/javascript")
