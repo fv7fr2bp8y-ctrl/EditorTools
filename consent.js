@@ -4,6 +4,31 @@
 (function () {
   var GA_ID = 'G-75J6ZETMF6';
   var KEY = 'et-consent';
+
+  // The Google Play app (TWA) gets no Google Analytics: its Play data declaration
+  // does not include it. The app opens the site with an android-app:// referrer;
+  // remember that for the whole visit, and also treat standalone display as the app.
+  var inApp = false;
+  try {
+    if (document.referrer.indexOf('android-app://') === 0) sessionStorage.setItem('et-in-app', '1');
+    inApp = sessionStorage.getItem('et-in-app') === '1';
+  } catch (e) {}
+  try { if (window.matchMedia && matchMedia('(display-mode: standalone)').matches) inApp = true; } catch (e) {}
+  if (inApp) {
+    window.gtag = function () {};
+    window.etConsentOpen = function () {};
+    var hideLink = function () {
+      var links = document.querySelectorAll('a[onclick*="etConsentOpen"]');
+      for (var i = 0; i < links.length; i++) {
+        var a = links[i], prev = a.previousSibling;
+        if (prev && prev.nodeType === 3) prev.nodeValue = prev.nodeValue.replace(/\s*·\s*$/, ' ');
+        a.remove();
+      }
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hideLink);
+    else hideLink();
+    return;
+  }
   window.dataLayer = window.dataLayer || [];
   function gtag() { dataLayer.push(arguments); }
   window.gtag = gtag;
