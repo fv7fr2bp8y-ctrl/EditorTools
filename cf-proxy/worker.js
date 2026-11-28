@@ -16,6 +16,12 @@ const UPSTREAM = "https://editortools-488956559838.europe-west1.run.app";
 export default {
   async fetch(request) {
     const incoming = new URL(request.url);
+    // One address for Google: http:// goes to https:// (308 keeps POST bodies).
+    if (incoming.protocol === "http:") {
+      incoming.protocol = "https:";
+      const code = request.method === "GET" || request.method === "HEAD" ? 301 : 308;
+      return Response.redirect(incoming.toString(), code);
+    }
     const upstream = new URL(UPSTREAM);
 
     // Насочи заявката към Space-а, запазвайки path + query
